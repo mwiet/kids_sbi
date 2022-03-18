@@ -2,6 +2,11 @@ build/
 dist/
 examples/output
 *.egg-info
+*.npz
+*.ini
+*.ipynb
+*.fits
+*.tgz
 
 __pycache__
 

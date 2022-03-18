@@ -37,7 +37,7 @@ class LinearMatterPower3D(Power3D):
     source_specific = False
 
 class GalaxyPower3D(Power3D):
-    section = "galaxy_power"
+    section = "matter_power_nl" #changed from galaxy_power
     source_specific = True
 
 class IntrinsicPower3D(Power3D):
@@ -49,7 +49,7 @@ class IntrinsicBBPower3D(Power3D):
     source_specific = True
 
 class MatterGalaxyPower3D(Power3D):
-    section = "matter_galaxy_power"
+    section = "matter_power_nl" #changed from matter_galaxy_power
     source_specific = True
 
 class MatterIntrinsicPower3D(Power3D):
@@ -164,6 +164,8 @@ class Spectrum(object):
 
         K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
+
+        np.savez('cosmosis_source_kernel_bin{0}.npz'.format(bin1), K1)
 
         #Call the integral
         c_ell = limber.limber(K1, K2, P, D, ell.astype(float), self.prefactor(block, bin1, bin2), 
@@ -696,6 +698,7 @@ class SpectrumCalculator(object):
         block[spectrum_name, 'is_auto'] = spectrum.is_autocorrelation()
 
         spectrum.prep_spectrum( block, self.chi_of_z, na, nbin2=nb)
+        c_ells = []
         for i in range(na):
             #for auto-correlations C_ij = C_ji so we calculate only one of them,
             #but save both orderings to the block to account for different ordering
@@ -706,12 +709,19 @@ class SpectrumCalculator(object):
                 c_ell = spectrum.compute( block, self.ell, i, j, 
                                           relative_tolerance=self.relative_tolerance, 
                                           absolute_tolerance=self.absolute_tolerance )
+                c_ells.append(c_ell)
                 block[spectrum_name, 'bin_{}_{}'.format(i+1,j+1)] = c_ell
                 if self.get_kernel_peaks:
                     chi_peak, z_peak = spectrum.kernel_peak(block, i, j, self.a_of_chi)
                     block[spectrum_name, "chi_peak_{}_{}".format(i + 1, j + 1)] = chi_peak
                     block[spectrum_name, "z_peak_{}_{}".format(i + 1, j + 1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i + 1, j + 1)] = 60 * np.degrees(1 / chi_peak)
+        if spectrum_name == 'shear_cl':
+            np.savez('shear_cl_limber', np.array(c_ells))
+        elif spectrum_name == 'galaxy_cl':
+            np.savez('galaxy_cl_limber', np.array(c_ells))
+        elif spectrum_name == 'galaxy_shear_cl':
+            np.savez('galaxy_shear_cl_limber', np.array(c_ells))
 
     def clean(self):
         # need to manually delete power spectra we have loaded
