@@ -134,7 +134,7 @@ def execute(block, config):
             np.savez('npz/p_lens_n_{0}.npz'.format(i+1), p_lens)
             np.savez('npz/z_lens_n_{0}.npz'.format(i+1), z_lens)
 
-            w           = config["w"] + config["wa"] * np.divide(z_distance, z_distance+1)
+            w           = config["w"] + config["wa"] * np.divide(z_distance, z_distance+1) #d_a(1+z)
             H_of_z      = 100*config['h0']*np.sqrt(config['omega_m']*(1+z_distance)**3 + config['omega_k']*(1+z_distance)**2 + config['omega_lambda']*(1+z_distance)**(3*(1+w)))
             kernel.append(float(config["clustering_bias"][i])*np.multiply(H_of_z/c, p_lens_int(z_distance)))
 
