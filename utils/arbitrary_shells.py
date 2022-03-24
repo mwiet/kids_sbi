@@ -1,6 +1,5 @@
 from cosmosis.datablock import option_section, names, BlockError
 import numpy as np
-from scipy.special import jv
 
 def setup(options):
     config = {}
@@ -25,14 +24,14 @@ def setup(options):
     if 'convergence' in config['data_sets']:
         try:
             config['convergence_shell_shape'] = options.get_string(option_section, "convergence_shell_shape") #tophat, gaussian, dirac
-            config['convergence_bin_mean'] = options[option_section, "convergence_bin_mean"] #tophat: midpoint, gaussian: mean, dirac: mean
+            config['convergence_shell_mean'] = options[option_section, "convergence_shell_mean"] #tophat: midpoint, gaussian: mean, dirac: mean
             if config['convergence_shell_shape'] == 'tophat' or config['convergence_shell_shape'] == 'gaussian':
                 try:
-                    config['convergence_bin_width'] = options[option_section, "convergence_bin_width"] #tophat: half-width, gaussian: std. dev.
+                    config['convergence_shell_width'] = options[option_section, "convergence_shell_width"] #tophat: half-width, gaussian: std. dev.
                 except:
                     raise Exception('If convergence_shell_shape == tophat or gaussian, please provide a half-width or standard deviation for each bin.')
         except:
-            raise Exception('To define convergence shells, please provide a convergence_shell_shape and a convergence_bin_mean.')
+            raise Exception('To define convergence shells, please provide a convergence_shell_shape and a convergence_shell_mean.')
     
     
     config['resolution'] = options.get_int(option_section, "resolution")
@@ -56,7 +55,6 @@ def execute(block, config):
                     n_of_z = np.zeros(len(z))
                     n_of_z[(bin_mean[i] + bin_width[i] > z) & (z > bin_mean[i] - bin_width[i])] = np.ones(len(n_of_z[(bin_mean[i] + bin_width[i] > z) & (z > bin_mean[i] - bin_width[i])]))
                     n_of_z[(bin_mean[i] + bin_width[i] == z) & (z == bin_mean[i] - bin_width[i])] = 0.5*np.ones(len(n_of_z[(bin_mean[i] + bin_width[i] == z) & (z == bin_mean[i] - bin_width[i])]))
-                    #n_of_z = 4 * (jv(1, 2*bin_width[i]*(z - bin_mean[i])))**2 / (2*bin_width[i]*(z - bin_mean[i]))**2
                     n_of_z = n_of_z/np.trapz(n_of_z, x = z)
                     print('Shell {0} between z = {1} and z = {2} with total prob. of {3}'.format(i+1, round(bin_mean[i] - bin_width[i], 2), round(bin_mean[i] + bin_width[i], 2), round(np.trapz(n_of_z, x = z), 2)))
                     shell.append(n_of_z)
@@ -79,8 +77,8 @@ def execute(block, config):
             data[name] = (z, np.array(shell))
         
         elif name == 'shell_convergence':
-            bin_mean = np.array(config['convergence_bin_mean'].split(','), dtype = np.float64)
-            bin_width = np.array(config['convergence_bin_width'].split(','), dtype = np.float64)
+            bin_mean = np.array(config['convergence_shell_mean'].split(','), dtype = np.float64)
+            bin_width = np.array(config['convergence_shell_width'].split(','), dtype = np.float64)
             z_max = bin_mean[-1] + 5*bin_width[-1] #arbitrary maximum approx. 5*sig
             if config['convergence_shell_shape'] == 'tophat':
                 zlim = [bin_mean[i] - bin_width[i] for i in range(len(bin_mean))]
@@ -89,7 +87,6 @@ def execute(block, config):
                     n_of_z = np.zeros(len(z))
                     n_of_z[(bin_mean[i] + bin_width[i] > z) & (z > bin_mean[i] - bin_width[i])] = np.ones(len(n_of_z[(bin_mean[i] + bin_width[i] > z) & (z > bin_mean[i] - bin_width[i])]))
                     n_of_z[(bin_mean[i] + bin_width[i] == z) & (z == bin_mean[i] - bin_width[i])] = 0.5*np.ones(len(n_of_z[(bin_mean[i] + bin_width[i] == z) & (z == bin_mean[i] - bin_width[i])]))
-                    #n_of_z = 4 * (jv(1, 2*bin_width[i]*(z - bin_mean[i])))**2 / (2*bin_width[i]*(z - bin_mean[i]))**2
                     n_of_z = n_of_z/np.trapz(n_of_z, x = z)
                     print('Bin {0} between z = {1} and z = {2} with total prob. of {3}'.format(i+1, round(bin_mean[i] - bin_width[i], 2), round(bin_mean[i] + bin_width[i], 2), round(np.trapz(n_of_z, x = z), 2)))
                     shell.append(n_of_z)

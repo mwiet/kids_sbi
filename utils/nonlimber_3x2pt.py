@@ -131,11 +131,11 @@ def execute(block, config):
 
         elif i >= number_count:
             if z_distance[0] == 0.0:
-            z_distance[0] = (z_distance[0] + z_distance[1])/2.
-            chi_distance[0] = z_distance[0]*c/(config['h0']*100) #only for small z
-            if chi_distance[0] > chi_distance[1]:
-                raise Exception('Smallest z value too large.')
-                
+                z_distance[0] = (z_distance[0] + z_distance[1])/2.
+                chi_distance[0] = z_distance[0]*c/(config['h0']*100) #only for small z
+                if chi_distance[0] > chi_distance[1]:
+                    raise Exception('Smallest z value too large.')
+                    
             p_source = block[config["source_input"], "bin_{0}".format(i-number_count+1)]
             z_source = block[config["source_input"], "z"]
 

@@ -105,8 +105,8 @@ def execute(block, config):
         for j in range(i+1):
             # get the angular power spectra from the galaxy shears
             pcl = hp.anafast([num[i], she[i].real, she[i].imag], [num[j], she[j].real, she[j].imag], pol=True, lmax=lmax)[1] #EE
-            #cls: (nbin(nbin+1)/2, 6, n_ell)
-            #cls contain TT, EE, BB, TE, EB, BB
+            #anafast output: (nbin(nbin+1)/2, 6, n_ell)
+            #anafast outputs contain TT, EE, BB, TE, EB, BB
             block['shear_pcl', 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
             block['shear_pcl', "is_auto"] = 'True'
             block['shear_pcl', "sample_a"] = 'source'
