@@ -24,6 +24,8 @@ def setup(options):
     config = {}
     config["ell_min"]   = options.get_double(option_section, "ell_min")
     config["ell_max"]   = options.get_double(option_section, "ell_max")
+    config["ell_limber"]   = options.get_double(option_section, "ell_limber")
+    config["ell_nonlimber"]   = options.get_double(option_section, "ell_nonlimber")
     config["n_ell"]     = options.get_int(option_section, "n_ell")
     
     config["data_sets"] = options.get_string(option_section, "data_sets") #source or lens
@@ -86,12 +88,6 @@ def execute(block, config):
 
     c = float(np.sqrt(block[names.cosmological_parameters, "cs2_de"]))*299792.4580 #km/s
 
-    if z_distance[0] == 0.0:
-        z_distance[0] = (z_distance[0] + z_distance[1])/2.
-        chi_distance[0] = z_distance[0]*c/(config['h0']*100) #only for small z
-        if chi_distance[0] > chi_distance[1]:
-            raise Exception('Smallest z value too large.')
-
     z_interp    = interp1d(chi_distance, z_distance, bounds_error = False, fill_value = "extrapolate")
     z_max       = z_interp(config['chi_max'])
 
@@ -104,12 +100,7 @@ def execute(block, config):
 
     p_k_linear = block[names.matter_power_lin, "p_k"]/config["h0"]**3
 
-    np.savez('npz/p_k.npz', p_k)
-    np.savez('npz/k_pk.npz', k_pk)
-    np.savez('npz/z_pk.npz', z_pk)
-
     power_spectrum = p_k.flatten()
-    linear_power_spectrum = p_k_linear.flatten()
 
     if len(power_spectrum) != len(z_pk)*len(k_pk):
         raise Exception("Power spectrum dimensions are inconsistent.")
@@ -139,6 +130,12 @@ def execute(block, config):
             kernel.append(float(config["clustering_bias"][i])*np.multiply(H_of_z/c, p_lens_int(z_distance)))
 
         elif i >= number_count:
+            if z_distance[0] == 0.0:
+            z_distance[0] = (z_distance[0] + z_distance[1])/2.
+            chi_distance[0] = z_distance[0]*c/(config['h0']*100) #only for small z
+            if chi_distance[0] > chi_distance[1]:
+                raise Exception('Smallest z value too large.')
+                
             p_source = block[config["source_input"], "bin_{0}".format(i-number_count+1)]
             z_source = block[config["source_input"], "z"]
 
@@ -182,21 +179,16 @@ def execute(block, config):
     ell = list(map(int, gen_log_space(config["ell_max"], int(config["n_ell"])) + config["ell_min"]))
 
     print(np.shape(chi_cl))
-    print('Launching Levin...')
+    print('Launching LevinPower...')
     lp = levinpower.LevinPower(False, number_count = int(number_count),
                             z_bg = z_distance, chi_bg = chi_distance,
                             chi_cl = chi_cl, kernel = kernels.T,
-                            k_pk = k_pk, z_pk = z_pk, pk = power_spectrum, boxy = True)
-
-    kernel_4 = []
-    for chi_i in chi_cl:
-        k = lp.kernels(chi_i, 4)
-        kernel_4.append(k)
-
-    np.savez("kernel_4", np.array(kernel_4))
+                            k_pk = k_pk, z_pk = z_pk, pk = power_spectrum, boxy = False)
     
-    #lp.init_splines(background_z, background_chi,
-    #            chi_kernels, kernels.T, k_pk, z_pk, power_spectrum)
+    lp.set_parameters(ELL_limber = config["ell_limber"], ELL_nonlimber = config["ell_nonlimber"], 
+                    max_number_subintervals =20, minell = config["ell_min"], maxell = config["ell_max"],
+                    N_nonlimber = 20, N_limber = 100, Ninterp = 600)
+
     print('Computing angular power spectra...')
     Cl_gg, Cl_gs, Cl_ss = lp.compute_C_ells(ell)
 
