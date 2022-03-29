@@ -61,14 +61,7 @@ def execute(block, config):
 
     c = float(np.sqrt(block[names.cosmological_parameters, "cs2_de"]))*299792.4580 #km/s
 
-    #if z_distance[0] == 0.0:
-    #    z_distance[0] = (z_distance[0] + z_distance[1])/2.
-    #    chi_distance[0] = z_distance[0]*c/(config['h0']*100) #only for small z
-    #    if chi_distance[0] > chi_distance[1]:
-    #        raise Exception('Smallest z value too large.')#
-
     z_interp    = interp1d(chi_distance, z_distance, bounds_error = False, fill_value = "extrapolate")
-    z_max       = z_interp(config['chi_max'])
 
     z_pk    = block[names.matter_power_nl, "z"]
     k_pk    = block[names.matter_power_nl, "k_h"]*config["h0"]

@@ -21,7 +21,7 @@ def setup(options):
         raise Exception('nside must be a power of 2.')
 
     config['out']       = options.get_string(option_section, "out") #shear
-    config['out_mode']  = options.get_string(option_section, "out_mode") #pcl
+    config['out_mode']  = options.get_string(option_section, "out_mode") #pcl, map
 
     try:
         visibility_file = options.get_string(option_section, "visibility_file")
@@ -60,7 +60,7 @@ def execute(block, config):
     matter_cl = []
     for i in range(nshell):
         for j in range(i+1):
-            matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax, dipole=True, monopole=False))
+            matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax, dipole=True, monopole=True))
 
     #Set up source redshift distributions
     nbin = block['nz_source', 'nbin']
@@ -100,6 +100,16 @@ def execute(block, config):
             pix, start, count = np.unique(gal_pix[s], return_index=True, return_counts=True)
             she[i][pix] += list(map(np.sum, np.split(gal_she[in_bin][s], start[1:])))
             num[i][pix] += count
+    
+    block['shear_pcl', "is_auto"] = 'True'
+    block['shear_pcl', "sample_a"] = 'source'
+    block['shear_pcl', "sample_b"] = 'source'
+    block['shear_pcl', "nbin"] = nbin
+    block['shear_pcl', "nbin_a"] = nbin
+    block['shear_pcl', "nbin_b"] = nbin
+    block['shear_pcl', "ell"] = np.arange(0, lmax+1)
+    block['shear_pcl', "n_density"] = config["n_density"]
+    block['shear_pcl', "sigma_e"] = config['sigma_e']
 
     for i in range(nbin):
         for j in range(i+1):
@@ -108,13 +118,6 @@ def execute(block, config):
             #anafast output: (nbin(nbin+1)/2, 6, n_ell)
             #anafast outputs contain TT, EE, BB, TE, EB, BB
             block['shear_pcl', 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
-            block['shear_pcl', "is_auto"] = 'True'
-            block['shear_pcl', "sample_a"] = 'source'
-            block['shear_pcl', "sample_b"] = 'source'
-            block['shear_pcl', "nbin"] = nbin
-            block['shear_pcl', "nbin_a"] = nbin
-            block['shear_pcl', "nbin_b"] = nbin
-            block['shear_pcl', "ell"] = np.arange(0, lmax)
 
     return 0
 

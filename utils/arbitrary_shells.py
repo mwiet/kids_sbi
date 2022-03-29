@@ -119,3 +119,6 @@ def execute(block, config):
         for i, n in enumerate(shell):
             block[name, "bin_{0}".format(i + 1)] = n
     return 0
+
+def cleanup(config):
+    pass
