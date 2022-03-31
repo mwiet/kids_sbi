@@ -12,6 +12,7 @@ def setup(options):
 
 def execute(block, config):
     if config['out'] == 'shear':
+        print('Reading in shear mixing matrix: {0}'.format(config['mm']))
         mm = np.load(config['mm'])['mm_shear']
         nbin = block['shear_pcl', 'nbin']
 

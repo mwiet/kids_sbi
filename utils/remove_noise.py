@@ -15,12 +15,13 @@ def execute(block, config):
         sigma_e = float(block['shear_rec_cl', "sigma_e"])
         ell =  block['shear_rec_cl', 'ell']
         area = config['fsky']*4*np.pi
-
+        print("Calculating shot and shape noise...")
         counter = 0
         for i in range(nbin):
             for j in range(i+1):
                 shear_cl = block['shear_rec_cl', 'bin_{0}_{1}'.format(i+1, j+1)]
                 noise = np.sqrt(np.pi/(area*ell*n_density[i]*n_density[j]))*sigma_e**2
+                noise[0] = 0
                 shear_cl -= noise
                 block['shear_cl', 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
                 block['shear_cl_noise', 'bin_{0}_{1}'.format(i+1,j+1)] = noise
