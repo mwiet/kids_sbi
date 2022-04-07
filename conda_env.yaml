@@ -12,3 +12,4 @@ dependencies:
     - mpi4py
     - healpy
     - interpcl
+    - pyDOE
