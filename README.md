@@ -1,4 +1,8 @@
-# KiDS Cosmology Analysis Pipeline
+# KiDS Cosmology Analysis Pipeline - Generator for Large Scale Structure
+
+This repository supports running a likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the GLASS framework that was used in the following analysis:
+- Statistics: Lin et al. in prep.
+- Cosmic shear: von Wietersheim-Kramsta et al. in prep.
 
 This repository contains the cosmology inference pipeline that was used in the KiDS-1000 analyses:
  - Methodology: [Joachimi, Lin, Asgari, Tröster, Heymans et al. 2021](https://arxiv.org/abs/2007.01844)
@@ -6,13 +10,17 @@ This repository contains the cosmology inference pipeline that was used in the K
  - 3x2pt: [Heymans, Tröster et al. 2021](https://arxiv.org/abs/2007.15632)
  - Beyond flat ΛCDM: [Tröster et al. 2021](https://arxiv.org/abs/2010.16416)
 
+The repository is based on the KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
+
 The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket.org/tilmantroester/cosmosis/src/kcap/) that is `pip`-installable and doesn't rely on environmental variables.
+
+The KCAP-GLASS repository integrates the Generator for Large Scale Structure environment (Tessore et al. in prep.), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
+
+In addition, the KCAP-GLASS implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module (Reischke et al. in prep.). This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
 
 A MontePython likelihood that wraps the kcap functionality can be found at [here](https://github.com/BStoelzner/KiDS-1000_MontePython_likelihood). 
 Note that the standard version of MontePython does not support non-flat priors yet, which is a problem for samplers that distiguish between likelihood and prior (such as MultiNest and PolyChord). 
 A version that supports Gaussian priors with MultiNest can be found [here](https://github.com/BStoelzner/montepython_public/tree/gaussian_prior).
-
-The different modules (CosmoSIS standard library, etc) are included as git subtree. Users don't have to worry about this detail but if you make changes to any of the modules it helps to structure your commits such that they only touch on one module at a time, such that these changes can be easily backported to the individual repositories.
 
 For a fiducial KV450 setup, have a look at `runs/config/KV450_fiducial.ini`.
 
@@ -21,8 +29,8 @@ For a fiducial KV450 setup, have a look at `runs/config/KV450_fiducial.ini`.
 
 Clone the repository:
 ```
-git clone git@github.com:KiDS-WL/kcap.git
-cd kcap
+git clone git@github.com:mwiet/kcap_glass.git
+cd kcap_glass
 ```
 
 It's strongly recommended to use some kind of encapsulated environment to install `kcap`, e.g., using `conda`. Here we assume that there is a anaconda installation available, that we need MPI support, and that we're on a machine with up-to-date GCC compilers. Notes on installations on macOS and details on how to set up things manually are [here](#installation-on-macos-and-other-details).
@@ -46,6 +54,23 @@ git clone --recursive git@github.com:cmbant/CAMB.git
 cd CAMB
 python setup.py build_cluster
 python setup.py install
+```
+
+We also need to install GLASS:
+
+```
+git clone https://github.com/glass-dev/glass.git
+# or clone via ssh: git clone git@github.com:glass-dev/glass.git
+cd glass
+pip install -e .
+```
+
+Next, we have to install the nonLimber module:
+
+```
+git clone https://github.com/rreischke/nonLimber_max.git
+cd nonLimber_max
+pip install .
 ```
 
 We can now build kcap (which installs a standalone version of CosmoSIS):
