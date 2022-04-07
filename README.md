@@ -10,7 +10,7 @@ This repository contains the cosmology inference pipeline that was used in the K
  - 3x2pt: [Heymans, Tröster et al. 2021](https://arxiv.org/abs/2007.15632)
  - Beyond flat ΛCDM: [Tröster et al. 2021](https://arxiv.org/abs/2010.16416)
 
-The repository is based on the KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
+The repository is based on the master branch of KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
 
 The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket.org/tilmantroester/cosmosis/src/kcap/) that is `pip`-installable and doesn't rely on environmental variables.
 
@@ -112,45 +112,4 @@ mpirun -n 4 cosmosis --mpi runs/config/KV450_no_sys.ini
 
 ## Repository structure
 
-- `cosebis`, `cosmosis-standard-library`: git subtrees that mirror the `kcap` branches of https://bitbucket.org/marika_a/cosebis_cosmosis and https://bitbucket.org/tilmantroester/cosmosis-standard-library, respectively.
-- `data`: collection of data files. Does not include the KiDS-1000 data. KiDS-1000 data can be found [here](https://github.com/KiDS-WL/Cat_to_Obs_K1000_P1).
-- `kcap`: Python package for the pipeline. Deprecated.
-- `modules`: non-trivial CosmoSIS modules used in kcap.
-- `montepython`: old MontePython likelihood files. Deprecated in favour of https://github.com/BStoelzner/KiDS-1000_MontePython_likelihood.
-- `runs`: collection of configurations and scripts to generate said configurations.
-- `tests`: some tests to check consistency between kcap, CCL, and MontePython.
-- `utils`: collection of tools and simple CosmoSIS modules used in kcap.
-
-
-## Development
-
-The different modules are organised as git subtrees.
-
-### Pull updates from a specific module repository
-
-Using `git subtree`:
-```
-git subtree pull --prefix=cosebis --squash cosebis-remote kcap
-```
-where `cosebis` is the module to be updated, `cosebis-remote` is the remote for the module, and `kcap` the remote branch. The option `--squash` collapses the histories of the modules. Especially for the CosmoSIS standard library this is useful, since we don't want its whole history in kcap.
-
-Using the `subtree` merge strategy:
-```
-git merge -s subtree --squash --allow-unrelated-histories cosebis-remote/kcap
-```
-The `--allow-unrelated-histories` seems to be necessary (probably because of the `--squash` option used earlier).
-
-### Push changes of modules in the kcap repository to the module repository
-Using `git subtree`:
-```
-git subtree push --prefix=cosebis cosebis-remote remote_branch
-```
-where `cosebis` is again the module to has been updated, `cosebis-remote` is the remote for the module, and `remote_branch` the remote branch that the updates will get push to.
-
-Using the `subtree` merge strategy:
-```
-git checkout -b backport cosebis-remote/kcap
-git cherry-pick -x --strategy=subtree commits_to_push
-git push
-```
-This is a bit more involved but allows for more control. First create a branch (`backport`) tracking the remote branch that is being targeted (`cosebis-remote/kcap`). Then cherry pick the commits (`commits_to_push`) that should be pushed to the module repository.
+N/A
