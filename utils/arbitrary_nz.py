@@ -8,8 +8,6 @@ def setup(options):
     if not config['data_sets']:
         raise Exception(
             "Option data_sets empty; please set the option data_sets=name1 name2 etc and I will search the fits file for nz_name2, nz_name2, etc.")
-    elif ('lens' or 'source') not in config['data_sets']:
-        raise Exception('Only "lens" or "source" data sets currently supported.')
 
     if 'lens' in config['data_sets']:
         try:

@@ -96,7 +96,8 @@ def execute(block, config):
 
     lp.set_parameters(ELL_limber = config["ell_limber"], ELL_nonlimber = config["ell_nonlimber"], 
                     max_number_subintervals =20, minell = int(config["ell_min"]), maxell = int(config["ell_max"]),
-                    N_nonlimber = 20, N_limber = 100, Ninterp = 600)
+                    N_nonlimber = 40, N_limber = 100, Ninterp = 600)
+
 
     print('Computing angular power spectra...')
     Cl_gg, Cl_gs, Cl_ss = lp.compute_C_ells(ell)
