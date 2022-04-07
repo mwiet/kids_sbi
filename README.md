@@ -31,9 +31,9 @@ git clone git@github.com:mwiet/kcap_glass.git
 cd kcap_glass
 ```
 
-It's strongly recommended to use some kind of encapsulated environment to install `kcap`, e.g., using `conda`. Here we assume that there is a anaconda installation available, that we need MPI support, and that we're on a machine with up-to-date GCC compilers. Notes on installations on macOS and details on how to set up things manually are [here](#installation-on-macos-and-other-details).
+It's strongly recommended to use some kind of encapsulated environment to install `kcap_glass`, e.g., using `conda`. Here we assume that there is a anaconda installation available, that we need MPI support, and that we're on a machine with up-to-date GCC compilers. Notes on installations on macOS and details on how to set up things manually are [here](#installation-on-macos-and-other-details).
 
-On machines with `module` support (e.g., cuillin), load the anaconda and openmpi modules first:
+On machines with `module` support (e.g., splinter, cuillin), load the anaconda and openmpi modules first:
 ```
 module load anaconda
 module load openmpi
@@ -46,7 +46,7 @@ conda env create -f conda_env.yaml
 ```
 This creates a `kcap_glass_env` environment that should have all the necessary dependencies. Activate the environment with `source activate kcap_glass_env`. NOTE: GLASS requires python >= 3.9
 
-We need to install CAMB because we use the new python interface for it. If `kcap` is to be used on a local machine, `pip install camb` is all there is to do. On a heterogenous cluster like `cuillin`, we need to build CAMB ourselves, however. To do so, run
+We need to install CAMB because we use the new python interface for it. If `kcap` is to be used on a local machine, `pip install camb` is all there is to do. On a heterogenous cluster like `splinter` or `cuillin`, we need to build CAMB ourselves, however. To do so, run
 ```
 git clone --recursive git@github.com:cmbant/CAMB.git
 cd CAMB
