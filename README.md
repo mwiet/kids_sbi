@@ -22,8 +22,6 @@ A MontePython likelihood that wraps the kcap functionality can be found at [here
 Note that the standard version of MontePython does not support non-flat priors yet, which is a problem for samplers that distiguish between likelihood and prior (such as MultiNest and PolyChord). 
 A version that supports Gaussian priors with MultiNest can be found [here](https://github.com/BStoelzner/montepython_public/tree/gaussian_prior).
 
-For a fiducial KV450 setup, have a look at `runs/config/KV450_fiducial.ini`.
-
 
 ## Installation
 
@@ -46,7 +44,7 @@ Now set up the conda environment using the provided `conda_env.yaml` file:
 ```
 conda env create -f conda_env.yaml
 ```
-This creates a `kcap_env` environment that should have all the necessary dependencies. Activate the environment with `source activate kcap_env`.
+This creates a `kcap_glass_env` environment that should have all the necessary dependencies. Activate the environment with `source activate kcap_glass_env`. NOTE: GLASS requires python >= 3.9
 
 We need to install CAMB because we use the new python interface for it. If `kcap` is to be used on a local machine, `pip install camb` is all there is to do. On a heterogenous cluster like `cuillin`, we need to build CAMB ourselves, however. To do so, run
 ```
@@ -62,6 +60,18 @@ We also need to install GLASS:
 git clone https://github.com/glass-dev/glass.git
 # or clone via ssh: git clone git@github.com:glass-dev/glass.git
 cd glass
+pip install -e .
+```
+Cosmology dependency:
+```
+git clone https://github.com/glass-dev/cosmology.git
+cd cosmology
+pip install -e .
+```
+CosmoSIS-GLASS interface:
+```
+git clone https://github.com/mwiet/glass-cosmosis.git
+cd cosmology
 pip install -e .
 ```
 
