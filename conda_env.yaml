@@ -1,6 +1,6 @@
-name: kcap_env
+name: kcap_glass_env
 dependencies:
-  - python=3
+  - python=3.9
   - future
   - pyyaml
   - numpy
@@ -10,3 +10,5 @@ dependencies:
   - pip:
     - emcee
     - mpi4py
+    - healpy
+    - interpcl
