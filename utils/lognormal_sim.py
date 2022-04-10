@@ -1,4 +1,5 @@
 from os import EX_SOFTWARE
+from numba import njit
 from cosmosis.datablock import option_section, names, BlockError
 import numpy as np
 from cosmology import LCDM
@@ -10,6 +11,7 @@ import glass.galaxies
 import glass.observations
 import healpy as hp
 from interpcl import interpcl
+import os
 from collections.abc import Iterable
 
 def setup(options):
@@ -41,6 +43,29 @@ def setup(options):
         raise Exception('Currently only support a single value of sigma_e for all bins.')
 
     return config
+
+@njit(nogil=True)
+def _map_shears_weights(she_map, wht_map, gal_pix, gal_she, gal_wht):
+    for i, s, w in zip(gal_pix, gal_she, gal_wht):
+        she_map[i] += s
+        wht_map[i] += w
+
+
+@njit(nogil=True)
+def _map_shears(she_map, wht_map, gal_pix, gal_she):
+    for i, s in zip(gal_pix, gal_she):
+        she_map[i] += s
+        wht_map[i] += 1
+
+
+def map_shears(she_map, wht_map, gal_lon, gal_lat, gal_she, gal_wht=None):
+    nside = hp.get_nside(she_map)
+    gal_pix = hp.ang2pix(nside, gal_lon, gal_lat, lonlat=True)
+
+    if gal_wht is None:
+        _map_shears(she_map, wht_map, gal_pix, gal_she)
+    else:
+        _map_shears_weights(she_map, wht_map, gal_pix, gal_she, gal_wht)
 
 def execute(block, config):
     #Setting up cosmology for the convergence map
@@ -87,19 +112,34 @@ def execute(block, config):
     num = np.zeros_like(she, dtype=int)
     npix = she.shape[-1]
 
+    # Getting all memory using os.popen()
+    total_memory, used_memory, free_memory = map(
+        int, os.popen('free -t -m').readlines()[-1].split()[1:])
+    
+    # Memory usage
+    print("GLASS after initialisation: RAM memory %d used:" % (round((used_memory/total_memory) * 100, 2)))
+
     #Iterate and map the galaxy shears to a HEALPix map
     for it in glass.sim.generate(generators):
         gal_lon, gal_lat = it['gal_lon'], it['gal_lat']
         gal_she = it['gal_she']
         gal_pop = it['gal_pop']
 
+        # Getting all memory using os.popen()
+        total_memory, used_memory, free_memory = map(
+            int, os.popen('free -t -m').readlines()[-1].split()[1:])
+        
+        # Memory usage
+        print("GLASS shell: RAM memory %d used:" % (round((used_memory/total_memory) * 100, 2)))
+
         for i in np.ndindex(*dndz.shape[:-1]):
             in_bin = (gal_pop == i)
-            gal_pix = hp.ang2pix(config['nside'], gal_lon[in_bin], gal_lat[in_bin], lonlat=True)
-            s = np.argsort(gal_pix)
-            pix, start, count = np.unique(gal_pix[s], return_index=True, return_counts=True)
-            she[i][pix] += list(map(np.sum, np.split(gal_she[in_bin][s], start[1:])))
-            num[i][pix] += count
+            map_shears(she[i], num[i], gal_lon[in_bin], gal_lat[in_bin], gal_she[in_bin])
+            #gal_pix = hp.ang2pix(config['nside'], gal_lon[in_bin], gal_lat[in_bin], lonlat=True)
+            #s = np.argsort(gal_pix)
+            #pix, start, count = np.unique(gal_pix[s], return_index=True, return_counts=True)
+            #she[i][pix] += list(map(np.sum, np.split(gal_she[in_bin][s], start[1:])W))
+            #num[i][pix] += count
     
     block['shear_pcl', "is_auto"] = 'True'
     block['shear_pcl', "sample_a"] = 'source'
