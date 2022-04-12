@@ -74,16 +74,18 @@ def execute(block, config):
 
 
     number_count = block[config["shell_input"], "nbin"]
+    zlim      = block[config["shell_input"], "zlim"]
 
     kernels = []
     for i in range(number_count):
-            p_z      = block[config["shell_input"], "bin_{0}".format(i+1)]
-            z_shell  = block[config["shell_input"], "z"]
-            p_z_int  = interp1d(z_shell, p_z, bounds_error = False, fill_value = "extrapolate")
-
-            w           = config["w"] + config["wa"] * np.divide(z_distance, z_distance+1)
-            E_of_z      = config['h0']*np.sqrt(config['omega_m']*(1+z_distance)**3 + config['omega_k']*(1+z_distance)**2 + config['omega_lambda']*(1+z_distance)**(3*(1+w)))
-            kernels.append(np.divide(np.multiply(chi_distance**2, p_z_int(z_distance)), E_of_z))
+            z_range = z_distance[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))]
+            chi_range = chi_distance[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))]
+            w           = config["w"] + config["wa"] * np.divide(z_range, z_range+1)
+            E_of_z      = config['h0']*np.sqrt(config['omega_m']*(1+z_range)**3 + config['omega_k']*(1+z_range)**2 + config['omega_lambda']*(1+z_range)**(3*(1+w)))
+            k = np.zeros(len(z_distance))
+            k[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))] = np.divide(np.multiply(chi_range**2), E_of_z)
+            k /= np.trapz(k, z_distance)
+            kernels.append(k)
     kernels     = np.array(kernels)
     
     ell = list(map(int, gen_log_space(config["ell_max"], int(config["n_ell"])) + config["ell_min"]))
