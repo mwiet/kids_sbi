@@ -80,12 +80,13 @@ def execute(block, config):
     nshell = block['shell_matter', 'nbin']
     redshift_shells = block['shell_matter', 'zlim']
     ell = block['matter_cl', 'ell']
+    lmax_in = int(np.max(ell))
     lmax = int(config['nside'])
 
     matter_cl = []
     for i in range(nshell):
         for j in range(i+1):
-            matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax, dipole=True, monopole=True))
+            matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax_in, dipole=True, monopole=True))
 
     #Set up source redshift distributions
     nbin = block['nz_source', 'nbin']

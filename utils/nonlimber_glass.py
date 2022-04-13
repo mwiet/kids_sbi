@@ -81,7 +81,7 @@ def execute(block, config):
             z_range = z_distance[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))]
             chi_range = chi_distance[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))]
             w           = config["w"] + config["wa"] * np.divide(z_range, z_range+1)
-            E_of_z      = config['h0']*np.sqrt(config['omega_m']*(1+z_range)**3 + config['omega_k']*(1+z_range)**2 + config['omega_lambda']*(1+z_range)**(3*(1+w)))
+            E_of_z      = np.sqrt(config['omega_m']*(1+z_range)**3 + config['omega_k']*(1+z_range)**2 + config['omega_lambda']*(1+z_range)**(3*(1+w)))
             k = np.zeros(len(z_distance))
             k[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))] = np.divide(np.multiply(chi_range**2), E_of_z)
             k /= np.trapz(k, z_distance)
@@ -121,7 +121,6 @@ def execute(block, config):
     new_order = [np.where((idx_sl == pair).all(axis=1))[0][0] for pair in idx_ls[:, [1, 0]]]
 
     Cl_gg_reordered = Cl_gg[new_order] #Reorders Cls s.t. bins are ordered following i>=j
-    np.savez('matter_cl', Cl_gg_reordered)
 
     counter = 0
     for i in range(0, number_count):
