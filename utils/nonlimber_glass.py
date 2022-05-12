@@ -83,7 +83,7 @@ def execute(block, config):
             w           = config["w"] + config["wa"] * np.divide(z_range, z_range+1)
             E_of_z      = np.sqrt(config['omega_m']*(1+z_range)**3 + config['omega_k']*(1+z_range)**2 + config['omega_lambda']*(1+z_range)**(3*(1+w)))
             k = np.zeros(len(z_distance))
-            k[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))] = np.divide(np.multiply(chi_range**2), E_of_z)
+            k[((zlim[i+1] >= z_distance) & (z_distance > zlim[i]))] = np.divide(chi_range**2, E_of_z)
             k /= np.trapz(k, z_distance)
             kernels.append(k)
     kernels     = np.array(kernels)
