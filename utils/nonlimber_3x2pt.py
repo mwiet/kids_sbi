@@ -3,9 +3,6 @@ import levinpower
 import numpy as np
 from scipy.integrate import simps
 from scipy.interpolate import interp1d
-import sys
-
-sys.settrace
 
 def gen_log_space(limit, n):
     result = [1]
@@ -83,16 +80,10 @@ def execute(block, config):
     config["a_of_chi"]  = interp1d(chi_distance, a_distance)
     config["chi_of_z"]  = interp1d(z_distance, chi_distance)
 
-    np.savez("npz/growth.npz", block[names.growth_parameters, "fsigma_8"])
-    np.savez("npz/growth_z.npz", block[names.growth_parameters, "z"])
-
     c = float(np.sqrt(block[names.cosmological_parameters, "cs2_de"]))*299792.4580 #km/s
 
     z_interp    = interp1d(chi_distance, z_distance, bounds_error = False, fill_value = "extrapolate")
     z_max       = z_interp(config['chi_max'])
-
-    np.savez('npz/z_distance.npz', z_distance)
-    np.savez('npz/chi_distance.npz', chi_distance)
 
     z_pk    = block[names.matter_power_nl, "z"]
     k_pk    = block[names.matter_power_nl, "k_h"]*config["h0"]
@@ -122,9 +113,6 @@ def execute(block, config):
             z_lens      = block[config["lens_input"], "z"]
             p_lens_int  = interp1d(z_lens, p_lens, bounds_error = False, fill_value = "extrapolate")
 
-            np.savez('npz/p_lens_n_{0}.npz'.format(i+1), p_lens)
-            np.savez('npz/z_lens_n_{0}.npz'.format(i+1), z_lens)
-
             w           = config["w"] + config["wa"] * np.divide(z_distance, z_distance+1) #d_a(1+z)
             H_of_z      = 100*config['h0']*np.sqrt(config['omega_m']*(1+z_distance)**3 + config['omega_k']*(1+z_distance)**2 + config['omega_lambda']*(1+z_distance)**(3*(1+w)))
             kernel.append(float(config["clustering_bias"][i])*np.multiply(H_of_z/c, p_lens_int(z_distance)))
@@ -142,9 +130,6 @@ def execute(block, config):
             p_interp = interp1d(z_source, p_source, fill_value = "extrapolate")
             p_source_n = p_interp(z_distance)
             p_source_n = p_source_n/np.trapz(p_source_n, z_distance)
-
-            np.savez('npz/p_source_n_{0}.npz'.format(i-number_count+1), p_source_n)
-            np.savez('npz/z_source_n_{0}.npz'.format(i-number_count+1), z_distance)
             
             chi_cl  = config["chi_of_z"](z_distance)
             norm        = 1.0/np.trapz(p_source_n[z_max >= z_distance], x = z_distance[z_max >= z_distance])
@@ -162,20 +147,9 @@ def execute(block, config):
                 prefactor   = 1.5*config['omega_m']*((100*config['h0'])**2)/(c**2)
                 kernel_i.append(prefactor*norm*chi*(1+z)*np.trapz(ratio, x = z_integrant))#integral from chi to chi_max of the source redshift distribution * (chi' - chi)/chi' w.r.t. chi'
                 count+=1
-            #for chi in chi_cl:
-            #    chi_integrant   = chi_cl[(config['chi_max'] >= chi_cl) & (chi_cl >= chi)]
-            #    z               = float(z_distance[chi_cl == chi][0])
-            #    z_integrant = z_distance[(z_max >= z_distance) & (z_distance >= z)]
-            #    w               = config["w"] + config["wa"] * np.divide(z_integrant, z_integrant+1)
-            #    H_of_z          = 100*config['h0']*np.sqrt(config['omega_m']*(1+z_integrant)**3 + config['omega_k']*(1+z_integrant)**2 + config['omega_lambda']*(1+z_integrant)**(3*(1+w)))
-            #    product         = np.multiply(p_source_n[(z_max >= z_distance) & (z_distance >= z)], chi_integrant - chi)
-            #    ratio           = np.divide(product, chi_integrant)
-            #    prefactor       = 1.5*config['omega_m']*((100*config['h0'])**2)/(c**2)
-            #    kernel_i.append(prefactor*norm*chi*(1+z)*np.trapz(np.multiply(ratio, H_of_z/c), x = chi_integrant))
             kernel.append(kernel_i)
     kernels     = np.array(kernel)
-    np.savez('kernels', kernels)
-    np.savez('chi_cl', chi_cl)
+
     ell = list(map(int, gen_log_space(config["ell_max"], int(config["n_ell"])) + config["ell_min"]))
 
     print(np.shape(chi_cl))
@@ -211,7 +185,6 @@ def execute(block, config):
         idx_sl = np.array([[i, j+i] for i in range(0, number_count_sh) for j in range(0, number_count_sh-i)]) #Generates bin permuatations such that i<=j
         new_order = [np.where((idx_sl == pair).all(axis=1))[0][0] for pair in idx_ls[:, [1, 0]]]
         Cl_ss_reordered = Cl_ss[new_order] #Reorders Cls s.t. bins are ordered following i>=j
-        np.savez('shear_cl', Cl_ss_reordered)
 
         counter = 0
         for i in range(0, number_count_sh):
@@ -236,7 +209,6 @@ def execute(block, config):
         new_order = [np.where((idx_sl == pair).all(axis=1))[0][0] for pair in idx_ls[:, [1, 0]]]
 
         Cl_gg_reordered = Cl_gg[new_order] #Reorders Cls s.t. bins are ordered following i>=j
-        np.savez('galaxy_cl', Cl_gg_reordered)
 
         counter = 0
         for i in range(0, number_count):
@@ -255,8 +227,6 @@ def execute(block, config):
         block["galaxy_shear_cl", "sep_name"] = "ell"
         block["galaxy_shear_cl", "save_name"] = ""
         block["galaxy_shear_cl", "ell"] = ell
-
-        np.savez('galaxy_shear_cl', Cl_gs)
 
         counter = 0
         for i in range(0, number_count):
