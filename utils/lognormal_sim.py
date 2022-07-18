@@ -39,6 +39,8 @@ def setup(options):
     config['n_density']  = options[option_section, 'n_density']
     config['sigma_e']    = options[option_section, 'sigma_e']
 
+    config['ia'] = options.get_string(option_section, "ia")
+
     if isinstance(config['sigma_e'], Iterable):
         raise Exception('Currently only support a single value of sigma_e for all bins.')
 
@@ -73,6 +75,7 @@ def execute(block, config):
     config["omega_m"]       = block[names.cosmological_parameters, "omega_m"]
     config["omega_k"]       = block[names.cosmological_parameters, "omega_k"]
     config["omega_lambda"]  = block[names.cosmological_parameters, "omega_lambda"]
+    config['a_ia']          = block[names.intrinsic_alignment_parameters, "a"]
 
     cosmo = LCDM(h=config['h0'], Om = config['omega_m'], Ol = config['omega_lambda'], Ok = config['omega_k'])
     
@@ -99,15 +102,27 @@ def execute(block, config):
     
 
     print('Initialising simulation ...')
-    generators = [
-    glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-    glass.observations.vis_constant(config['mask'], config['mask_nside']),
-    glass.matter.lognormal_matter(config['nside']),
-    glass.lensing.convergence(cosmo),
-    glass.lensing.shear(),
-    glass.galaxies.gal_dist_uniform(z, dndz),
-    glass.galaxies.gal_ellip_gaussian(float(config['sigma_e'])),
-    glass.galaxies.gal_shear_interp(cosmo)]
+    if 'nla' in config['ia']:
+        generators = [
+        glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
+        glass.observations.vis_constant(config['mask'], config['mask_nside']),
+        glass.matter.lognormal_matter(config['nside']),
+        glass.lensing.convergence(cosmo),
+        glass.lensing.ia_nla(cosmo, config['a_ia']),
+        glass.lensing.shear(),
+        glass.galaxies.gal_dist_uniform(z, dndz),
+        glass.galaxies.gal_ellip_gaussian(float(config['sigma_e'])),
+        glass.galaxies.gal_shear_interp(cosmo)]
+    else:
+        generators = [
+        glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
+        glass.observations.vis_constant(config['mask'], config['mask_nside']),
+        glass.matter.lognormal_matter(config['nside']),
+        glass.lensing.convergence(cosmo),
+        glass.lensing.shear(),
+        glass.galaxies.gal_dist_uniform(z, dndz),
+        glass.galaxies.gal_ellip_gaussian(float(config['sigma_e'])),
+        glass.galaxies.gal_shear_interp(cosmo)]
 
     she = np.zeros((*dndz.shape[:-1], hp.nside2npix(config['nside'])), dtype=complex)
     num = np.zeros_like(she, dtype=int)
