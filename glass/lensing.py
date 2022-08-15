@@ -19,6 +19,7 @@ Single source plane
 
    convergence
    shear
+   ia_nla
 
 
 Source distributions
@@ -223,13 +224,93 @@ def convergence(cosmo, weight='midpoint'):
         # before losing it, keep current matter slice for next round
         delta12 = delta23
 
-@generator('zmin, zmax, delta, kappa -> kappa')
-def ia_nla(cosmo, A_ia, eta=0., z0=0., lbar=0., l0=1e-9, beta=0.):
-    '''implementation of intrinsic alignments using the NLA model
-    
-    Notes
-    -----
 
+@generator('zmin, zmax, delta, kappa -> kappa')
+def ia_nla(cosmo, a_ia, eta=0., z0=0., lbar=0., l0=1e-9, beta=0.):
+    r'''Intrinsic alignments using the NLA model
+
+    Parameters
+    ----------
+    cosmo: :class:`~cosmology._lcdm.LCDM`
+        LCDM cosmology model of interest.
+    a_ia: float
+        Intrinsic alignments amplitude.
+    eta: float, optional
+        Power of the redshift dependence of the intrinsic alignments amplitude.
+        If not given, it is assumed to be 0.
+    z0: float, optional
+        Reference redshift used in redshift dependence of the intrinsic alignments
+        amplitude. If not given, it is assumed to be 0.
+    lbar: float, optional
+        Mean luminosity of the galaxy sample used in luminosity dependence of the
+        intrinsic alignments amplitude. If not given, it is assumed to be 0.
+    l0: float, optional
+        Reference luminosity used in luminosity dependence of the intrinsic alignments
+        amplitude. If not given, it is assumed to be 1e-09.
+    beta: float, optional
+        Power of the luminosity dependence of the intrinsic alignments amplitude.
+        If not given, it is assumed to be 0.
+
+    Receives
+    ----------
+    zmin: float
+        Minimum redshift of the matter shell.
+    zmax: float
+        Maximum redshift of the matter shell.
+    delta: (nside, ) array_like
+        Matter overdensity map of the matter shell.
+    kappa: (nside, ) array_like
+        Convergence map of the matter shell.
+
+    Yields
+    ----------
+    kappa: (nside, ) array_like
+        Updated convergence map of the mattter shell including IA.
+
+    Warnings
+    ----------
+    This generator changes the kappa maps.
+
+    Notes
+    ----------
+
+    The instrinsic alignments convergence :math:`\kappa_{\rm{IA}}` is computed
+    from the matter overdensity field :math:`\delta` using the Non-linear
+    Alignments Model (NLA) [1]_ [2]_ [3]_ in the following manner.
+
+    We define the intrinsic alignment amplitude :math:`f_{\rm{NLA}}` for a given
+    redshift shell at its midpoint in comoving distance at :math:`z` as [4]_
+
+    .. math::
+
+        f_{\rm{NLA}} = - A_{\rm{IA}} \frac{C_{1} \overline{\rho}(z)}{\overline{D}(z)}
+        \bigg(\frac{1+z}{1+z_{0}}\bigg)^{\eta}
+        \bigg(\frac{\overline{L}}{L_{0}}\bigg)^{\beta}  \;.
+
+    where :math:`A_{\rm{IA}}` is the intrinsic alignments amplitude,
+    :math:`C_{1}` is a normalisation constant set to
+    :math:`C_{1} = 5 \times 10^{-14} (h^{2} M_{\odot}/Mpc^{-3})^{-2}` [2]_,
+    :math:`\overline{\rho}` is the mean matter density of the Universe at redshift :math:`z`,
+    :math:`\overline{D}(z)` is the growth factor, :math:`\eta` is the power of the power law
+    which describes the redshift-dependence of the IA with respect to :math:`z_{0}` and
+    :math:`\beta` is the power of the power law which describes the dependence on luminosity,
+    :math:`\overline{L}`, of the IA with respect to :math:`L_{0}`.
+
+    Then, the convergence of the matter shells is updated by adding the contribution from IAs
+    to the convergence from lensing as follows
+
+    .. math::
+
+        \kappa(z) = \kappa_{\rm{lensing}}(z) + f_{\rm{NLA}}(z, \overline{L}) \delta(z)
+
+    where :math:`\delta(z)` is the matter overdensity field at redshift :math:`z`.
+
+    References
+    ----------
+    .. [1] Catelan P., Kamionkowski M., Blandford R. D., 2001, MNRAS, 320, L7. doi:10.1046/j.1365-8711.2001.04105.x
+    .. [2] Hirata C. M., Seljak U., 2004, PhRvD, 70, 063526. doi:10.1103/PhysRevD.70.063526
+    .. [3] Bridle S., King L., 2007, NJPh, 9, 444. doi:10.1088/1367-2630/9/12/444
+    .. [4] Jeffrey N., Alsing J., Lanusse F., 2021, MNRAS, 501, 954. doi:10.1093/mnras/staa3594
     '''
 
     # initial yield
@@ -241,24 +322,24 @@ def ia_nla(cosmo, A_ia, eta=0., z0=0., lbar=0., l0=1e-9, beta=0.):
         except GeneratorExit:
             break
 
-        #get centre of the comoving shell
+        # Get centre of the comoving shell
         dcmin, dcmax = cosmo.dc(np.array([zmin, zmax]))
         dcmid = (dcmax - dcmin)*.5 + dcmin
         zmid = cosmo.dc_inv(dcmid)
 
-        #get the normalisation constant within the NLA model
-        c1 = 5e-14/cosmo.h**2 # solar masses per cubic Mpc
-        rho_c1 = c1*cosmo.rhoc(0)
+        # Get the normalisation constant within the NLA model
+        c1 = 5e-14/cosmo.h**2  # Solar masses per cubic Mpc
+        rho_c1 = c1*cosmo.rho_c0
 
-        #apply the NLA model
-        prefactor = - A_ia * rho_c1 * cosmo.Om
+        # Apply the NLA model
+        prefactor = - a_ia * rho_c1 * cosmo.Om
         inverse_linear_growth = 1. / cosmo.gf(zmid)
         redshift_dependence = ((1+zmid)/(1+z0))**eta
         luminosity_dependence = (lbar/l0)**beta
 
         f_nla = prefactor * inverse_linear_growth * redshift_dependence * luminosity_dependence
 
-        #update the convergence field
+        # Update the convergence field
         kappa_ia = kappa + delta * f_nla
 
 
