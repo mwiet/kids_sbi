@@ -73,7 +73,7 @@ pip install -e .
 CosmoSIS-GLASS interface:
 ```
 git clone https://github.com/mwiet/glass-cosmosis.git
-cd cosmology
+cd glass-cosmosis
 pip install -e .
 ```
 
