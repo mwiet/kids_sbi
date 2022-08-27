@@ -14,6 +14,8 @@ from interpcl import interpcl
 import os
 from collections.abc import Iterable
 import healpy as hp
+from astropy.io import fits
+import time
 
 def setup(options):
     config = {}
@@ -25,6 +27,9 @@ def setup(options):
 
     config['out']       = options.get_string(option_section, "out") #shear
     config['out_mode']  = options.get_string(option_section, "out_mode") #pcl, map, catalogue, salmo
+
+    if 'pcl' in config['out_mode']:
+        config['lmax'] = options.get_int(option_section, "lmax")
 
     try:
         visibility_file = options.get_string(option_section, "visibility_file")
@@ -76,6 +81,56 @@ def map_shears(she_map, wht_map, gal_lon, gal_lat, gal_she, gal_wht=None):
     else:
         _map_shears_weights(she_map, wht_map, gal_pix, gal_she, gal_wht)
 
+def save_fits(name, map):
+    if len(map) != 3:
+        full   = np.array(map).astype(np.float32)
+        nbRows = full.size // 1024
+        full   = full.reshape(nbRows, 1024)
+        nside  = hp.npix2nside(full.size)
+
+        HDU1 = fits.PrimaryHDU()
+        HDU2 = fits.BinTableHDU.from_columns([
+        fits.Column(name='TEMPERATURE', format='1024E', unit='unknown ', array=full)
+        ])
+
+        hdr = HDU2.header
+        hdr.append(('EXTNAME',  'xtension ',   'Name of this binary table extension'),          bottom=True)
+        hdr.append(('PIXTYPE',  'HEALPIX ',    'HEALPIX pixelisation'),                         bottom=True)
+        hdr.append(('ORDERING', 'RING    ',    'Pixel ordering scheme'),                        bottom=True)
+        hdr.append(('COORDSYS', 'C       ',    'Ecliptic, Galactic or Celestial (equatorial)'), bottom=True)
+        hdr.append(('NSIDE',    nside,         'nside of the pixel'),                           bottom=True)
+        hdr.append(('FIRSTPIX', 0,             'First pixel # (0 based)'),                      bottom=True)
+        hdr.append(('LASTPIX',  12*nside**2-1, 'Last pixel # (0 based)'),                       bottom=True)
+        hdr.append(('INDXSCHM', 'IMPLICIT',    'Indexing: IMPLICIT or EXPLICIT'),               bottom=True)
+        hdr.append(('POLCCONV', 'COSMO   ',    ''),               bottom=True)
+
+        fits.HDUList([HDU1, HDU2]).writeto(name, overwrite=True)
+    
+    else:
+        full   = np.array(map).astype(np.float32)
+        nside  = hp.npix2nside(full[0].size)
+        nbRows = full[0].size // 1024
+
+        HDU1 = fits.PrimaryHDU()
+        HDU2 = fits.BinTableHDU.from_columns([
+        fits.Column(name='TEMPERATURE', format='1024E', unit='unknown ', array=full[0].reshape(nbRows, 1024)),
+        fits.Column(name='Q_POLARISATION', format='1024E', unit='unknown ', array=full[1].reshape(nbRows, 1024)),
+        fits.Column(name='U_POLARISATION', format='1024E', unit='unknown ', array=full[2].reshape(nbRows, 1024))
+        ])
+
+        hdr = HDU2.header
+        hdr.append(('EXTNAME',  'xtension ',   'Name of this binary table extension'),          bottom=True)
+        hdr.append(('PIXTYPE',  'HEALPIX ',    'HEALPIX pixelisation'),                         bottom=True)
+        hdr.append(('ORDERING', 'RING    ',    'Pixel ordering scheme'),                        bottom=True)
+        hdr.append(('COORDSYS', 'C       ',    'Ecliptic, Galactic or Celestial (equatorial)'), bottom=True)
+        hdr.append(('NSIDE',    nside,         'nside of the pixel'),                           bottom=True)
+        hdr.append(('FIRSTPIX', 0,             'First pixel # (0 based)'),                      bottom=True)
+        hdr.append(('LASTPIX',  12*nside**2-1, 'Last pixel # (0 based)'),                       bottom=True)
+        hdr.append(('INDXSCHM', 'IMPLICIT',    'Indexing: IMPLICIT or EXPLICIT'),               bottom=True)
+        hdr.append(('POLCCONV', 'COSMO   ',    ''),               bottom=True)
+
+        fits.HDUList([HDU1, HDU2]).writeto(name, overwrite=True)
+
 def execute(block, config):
     
     #Create file paths for fits files
@@ -83,16 +138,23 @@ def execute(block, config):
     new_path = False
     while new_path is False:
             path = '{0}/{1}_sample{2}'.format(config['out_folder'], config['runTag'], counter)
-            print(path)
+            num = np.random.randint(low=1, high=20)
+            time.sleep(0.001*num)
             if os.path.exists(path) == True:
                 new_path = False
                 counter += 1
             else:
-                os.mkdir(path)
-                os.mkdir('{0}/glass_denMap'.format(path))
-                os.mkdir('{0}/glass_lenMap'.format(path))
-                config['counter'] = counter
-                new_path = True
+                try:
+                    os.mkdir(path)
+                    print('Creating {0}...'.format(path))
+                    os.mkdir('{0}/glass_denMap'.format(path))
+                    os.mkdir('{0}/glass_lenMap'.format(path))
+                    config['counter'] = counter
+                    new_path = True
+                except:
+                    new_path = False
+                    counter += 1
+
 
     #Setting up cosmology for the convergence map
     config["h0"]            = block[names.cosmological_parameters, "h0"]
@@ -108,7 +170,6 @@ def execute(block, config):
     redshift_shells = block['shell_matter', 'zlim']
     ell = block['matter_cl', 'ell']
     lmax_in = int(np.max(ell))
-    lmax = int(config['nside'])
 
     matter_cl = []
     for i in range(nshell):
@@ -137,11 +198,13 @@ def execute(block, config):
         gamma2 = np.zeros_like(delta, dtype=float)
 
         #Iterate and map kappa and gamma to a HEALPix map
+        i = 0
         for it in glass.sim.generate(generators):
             delta[i] = it['delta']
             kappa[i] = it['kappa']
             gamma1[i] = it['gamma1']
             gamma2[i] = it['gamma2']
+            i += 1
 
         block['salmo', 'map_folder'] = config['out_folder']
         block['salmo', 'nside'] = config['nside']
@@ -150,13 +213,15 @@ def execute(block, config):
         block['salmo', 'counter']  =  config['counter']
 
         for s in range(nshell):
-            filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_f1z{4}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], s+1)
-            filename_lenMap = '{0}/{3}_sample{1}/glass_lenMap/{2}_lenMap_{3}_f2z{4}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], s+1)
+            filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
+            filename_lenMap = '{0}/{3}_sample{1}/glass_lenMap/{2}_lenMap_{3}_sample{4}_f2z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
             
             print('Saving {0}...'.format(filename_denMap))
-            hp.write_map(filename_denMap, m = delta[s], dtype=np.float64, nest=False, fits_IDL = True, overwrite=True)
+            save_fits(filename_denMap, delta[s])
+            #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
             print('Saving {0}...'.format(filename_lenMap))
-            hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float64, np.float64, np.float64], nest=False, fits_IDL = True, overwrite=True)
+            save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
+            #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
 
     else:
         #No variable depth, so we can go directly to catalogues, maps or pseudo-Cls
@@ -219,44 +284,44 @@ def execute(block, config):
                     map_shears(she[i], num[i], gal_lon[in_bin], gal_lat[in_bin], gal_she[in_bin])
 
         if 'pcl' in config['out_mode']:
-            block['shear_pcl', "is_auto"] = 'True'
-            block['shear_pcl', "sample_a"] = 'source'
-            block['shear_pcl', "sample_b"] = 'source'
-            block['shear_pcl', "nbin"] = nbin
-            block['shear_pcl', "nbin_a"] = nbin
-            block['shear_pcl', "nbin_b"] = nbin
-            block['shear_pcl', "ell"] = np.arange(0, lmax+1)
-            block['shear_pcl', "n_density"] = config["n_density"]
-            block['shear_pcl', "sigma_e"] = config['sigma_e']
+            block['shear_pcl_novd', "is_auto"] = 'True'
+            block['shear_pcl_novd', "sample_a"] = 'source'
+            block['shear_pcl_novd', "sample_b"] = 'source'
+            block['shear_pcl_novd', "nbin"] = nbin
+            block['shear_pcl_novd', "nbin_a"] = nbin
+            block['shear_pcl_novd', "nbin_b"] = nbin
+            block['shear_pcl_novd', "ell"] = np.arange(0, config['lmax']+1)
+            block['shear_pcl_novd', "n_density"] = config["n_density"]
+            block['shear_pcl_novd', "sigma_e"] = config['sigma_e']
 
             for i in range(nbin):
                 for j in range(i+1):
                     # get the angular power spectra from the galaxy shears
-                    pcl = hp.anafast([num[i], she[i].real, she[i].imag], [num[j], she[j].real, she[j].imag], pol=True, lmax=lmax)[1] #EE
+                    pcl = hp.anafast([num[i], she[i].real, she[i].imag], [num[j], she[j].real, she[j].imag], pol=True, lmax=config['lmax'])[1] #EE
                     #anafast output: (nbin(nbin+1)/2, 6, n_ell)
                     #anafast outputs contain TT, EE, BB, TE, EB, BB
-                    block['shear_pcl', 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
+                    block['shear_pcl_novd', 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
         
         if 'map' in config['out_mode']:
-            block['shear_map', "sample"] = 'source'
-            block['shear_map', "nbin"] = nbin
-            block['shear_map', "sigma_e"] = config['sigma_e']
+            block['shear_map_novd', "sample"] = 'source'
+            block['shear_map_novd', "nbin"] = nbin
+            block['shear_map_novd', "sigma_e"] = config['sigma_e']
 
-            block['galaxy_map', "sample"] = 'lens'
-            block['galaxy_map', "nbin"] = nbin
-            block['galaxy_map', "n_density"] = config["n_density"]
+            block['galaxy_map_novd', "sample"] = 'lens'
+            block['galaxy_map_novd', "nbin"] = nbin
+            block['galaxy_map_novd', "n_density"] = config["n_density"]
 
             for i in range(nbin):
-                block['shear_map', 'shear_1_bin_{0}'.format(i+1)] = she[i].real
-                block['shear_map', 'shear_2_bin_{0}'.format(i+1)] = she[i].imag
-                block['galaxy_map', 'bin_{0}'.format(i+1)] = num[i]
+                block['shear_map_novd', 'shear_1_bin_{0}'.format(i+1)] = she[i].real
+                block['shear_map_novd', 'shear_2_bin_{0}'.format(i+1)] = she[i].imag
+                block['galaxy_map_novd', 'bin_{0}'.format(i+1)] = num[i]
         
         if 'cat' in config['out_mode']:
-            block['catalogue', 'lon'] = cat_lon
-            block['catalogue', 'lat'] = cat_lat
-            block['catalogue', 'shear_1'] = cat_she.real
-            block['catalogue', 'shear_2'] = cat_she.imag
-            block['catalogue', 'bin'] = cat_pop 
+            block['catalogue_novd', 'lon'] = cat_lon
+            block['catalogue_novd', 'lat'] = cat_lat
+            block['catalogue_novd', 'shear_1'] = cat_she.real
+            block['catalogue_novd', 'shear_2'] = cat_she.imag
+            block['catalogue_novd', 'bin'] = cat_pop 
 
     return 0
 

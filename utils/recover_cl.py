@@ -6,7 +6,7 @@ def setup(options):
     config['mm'] = options.get_string(option_section, "mm")
 
     if config['mm'][-4:] != '.npz':
-        raise Exception('Only .npz files are supported for the mixing matrix.')
+        raise Exception('Only numpy .npz files are supported for the mixing matrix.')
     config['out'] = options.get_string(option_section, "out") #only shear
     return config
 
@@ -23,8 +23,21 @@ def execute(block, config):
         block['shear_rec_cl', "nbin_a"] = nbin
         block['shear_rec_cl', "nbin_b"] = nbin
         block['shear_rec_cl', "ell"] = block['shear_pcl', 'ell']
-        block['shear_rec_cl', "n_density"] = block['shear_pcl', "n_density"]
-        block['shear_rec_cl', "sigma_e"] = block['shear_pcl', "sigma_e"]
+        try:
+            block['shear_rec_cl', "n_density"] = block['shear_pcl', "n_density"]
+            block['shear_rec_cl', "sigma_e"] = block['shear_pcl', "sigma_e"]
+        except:
+            print('Only variable depth bins given.')
+            pass
+
+        try:
+            block['shear_rec_cl', "a_n_density"] = block['shear_pcl', 'a_n_density']
+            block['shear_rec_cl', "b_n_density"] = block['shear_pcl', 'b_n_density']
+            block['shear_rec_cl', "a_sigma_e"] = block['shear_pcl', "a_sigma_e"]
+            block['shear_rec_cl', "b_sigma_e"] = block['shear_pcl', "b_sigma_e"]
+        except:
+            print('No variable depth bins given.')
+            pass
 
         counter = 0
         for i in range(nbin):
