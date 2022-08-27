@@ -2,7 +2,7 @@
 
 # Kilo-Degree Survey - Simulation-Based Inference
 
-This repository supports running a likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the GLASS framework that was used in the following analyses:
+This repository supports running a simulation-based/likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the CosmoSIS and GLASS frameworks that was used in the following analyses:
 - Likelihood-free inference: Lin et al. in prep.
 - Forward simulations: von Wietersheim-Kramsta et al. in prep.
 
@@ -16,24 +16,19 @@ The repository is based on the master branch of KCAP module which can be found [
 
 The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket.org/tilmantroester/cosmosis/src/kcap/) that is `pip`-installable and doesn't rely on environmental variables.
 
-The KCAP-GLASS repository integrates the Generator for Large Scale Structure environment (Tessore et al. in prep.), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
+The KiDS-SBI repository integrates the Generator for Large Scale Structure environment (Tessore et al. in prep.), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
 
-In addition, the KCAP-GLASS implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module (Reischke et al. in prep.). This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
-
-A MontePython likelihood that wraps the kcap functionality can be found at [here](https://github.com/BStoelzner/KiDS-1000_MontePython_likelihood). 
-Note that the standard version of MontePython does not support non-flat priors yet, which is a problem for samplers that distiguish between likelihood and prior (such as MultiNest and PolyChord). 
-A version that supports Gaussian priors with MultiNest can be found [here](https://github.com/BStoelzner/montepython_public/tree/gaussian_prior).
-
+In addition, the KiDS-SBI implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module (Reischke et al. in prep.). This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
 
 ## Installation
 
 Clone the repository:
 ```
-git clone git@github.com:mwiet/kcap_glass.git
-cd kcap_glass
+git clone git@github.com:mwiet/kids_sbi.git
+cd kids_sbi
 ```
 
-It's strongly recommended to use some kind of encapsulated environment to install `kcap_glass`, e.g., using `conda`. Here we assume that there is a anaconda installation available, that we need MPI support, and that we're on a machine with up-to-date GCC compilers. Notes on installations on macOS and details on how to set up things manually are [here](#installation-on-macos-and-other-details).
+It's strongly recommended to use some kind of encapsulated environment to install `kids_sbi`, e.g., using `conda`. Here we assume that there is a anaconda installation available, that we need MPI support, and that we're on a machine with up-to-date GCC compilers. Notes on installations on macOS and details on how to set up things manually are [here](#installation-on-macos-and-other-details).
 
 On machines with `module` support (e.g., splinter, cuillin), load the anaconda and openmpi modules first:
 ```
@@ -46,7 +41,7 @@ Now set up the conda environment using the provided `conda_env.yaml` file:
 ```
 conda env create -f conda_env.yaml
 ```
-This creates a `kcap_glass_env` environment that should have all the necessary dependencies. Activate the environment with `source activate kcap_glass_env`. NOTE: GLASS requires python >= 3.9
+This creates a `kids_sbi_env` environment that should have all the necessary dependencies. Activate the environment with `source activate kids_sbi_env`. NOTE: GLASS requires python >= 3.9
 
 We need to install CAMB because we use the new python interface for it. If `kcap` is to be used on a local machine, `pip install camb` is all there is to do. On a heterogenous cluster like `splinter` or `cuillin`, we need to build CAMB ourselves, however. To do so, run
 ```
@@ -83,6 +78,15 @@ Next, we have to install the nonLimber module:
 git clone https://github.com/rreischke/nonLimber_max.git
 cd nonLimber_max
 pip install .
+```
+
+Finally, we also have to install [SALMO](https://github.com/Linc-tw/salmo):
+
+```
+git clone https://github.com/Linc-tw/salmo.git
+cd salmo/build
+cmake ..
+make
 ```
 
 We can now build kcap (which installs a standalone version of CosmoSIS):
