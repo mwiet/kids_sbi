@@ -97,7 +97,7 @@ def setup(options):
             raise Exception('outStyle must be either 1, 2 or 64: 1 = all galaxies in one file, 2 = two files, one w/ lensing, one w/o, 64 = one file per type')
         
         if config['outStyle'] != '64':
-            raise Warning ('If you do not set outStyle = 64, the .fits outputs will not be compatible with other modules in KCAP_GLASS.')
+            raise Warning ('If you do not set outStyle = 64, the .fits outputs will not be compatible with other modules in KiDS_SBI.')
         
         #Variable depth
         config['doVariableDepth'] =   str(options[option_section,  'doVariableDepth'])
