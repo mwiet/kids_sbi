@@ -1,4 +1,6 @@
-# KiDS Cosmology Analysis Pipeline - Generator for Large Scale Structure
+<img src="KiDS_SBI_logo.png" width="400" />
+
+# Kilo-Degree Survey - Simulation-Based Inference
 
 This repository supports running a likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the GLASS framework that was used in the following analyses:
 - Likelihood-free inference: Lin et al. in prep.
@@ -71,7 +73,7 @@ pip install -e .
 CosmoSIS-GLASS interface:
 ```
 git clone https://github.com/mwiet/glass-cosmosis.git
-cd cosmology
+cd glass-cosmosis
 pip install -e .
 ```
 
