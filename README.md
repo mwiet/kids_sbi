@@ -1,4 +1,6 @@
-# KiDS Cosmology Analysis Pipeline - Generator for Large Scale Structure
+# KiDS Cosmology Analysis Pipeline - Simulation-Based Inference
+
+![alt text](KiDS_SBI_logo.png)
 
 This repository supports running a likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the GLASS framework that was used in the following analyses:
 - Likelihood-free inference: Lin et al. in prep.
