@@ -1,4 +1,4 @@
-name: kcap_glass_env
+name: kids_sbi_env
 dependencies:
   - python=3.9
   - future
