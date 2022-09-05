@@ -206,11 +206,11 @@ def execute(block, config):
             gamma2[i] = it['gamma2']
             i += 1
 
-        block['salmo', 'map_folder'] = config['out_folder']
-        block['salmo', 'nside'] = config['nside']
-        block['salmo', 'prefix'] = config['prefix']
-        block['salmo', 'runTag'] = config['runTag']
-        block['salmo', 'counter']  =  config['counter']
+        block['glass', 'map_folder'] = config['out_folder']
+        block['glass', 'nside'] = config['nside']
+        block['glass', 'prefix'] = config['prefix']
+        block['glass', 'runTag'] = config['runTag']
+        block['glass', 'counter']  =  config['counter']
 
         for s in range(nshell):
             filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)

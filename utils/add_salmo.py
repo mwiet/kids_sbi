@@ -99,6 +99,8 @@ def setup(options):
         if config['outStyle'] != '64':
             raise Warning ('If you do not set outStyle = 64, the .fits outputs will not be compatible with other modules in KiDS_SBI.')
         
+        config['out_name'] = options.get_string(option_section, 'out_name')
+
         #Variable depth
         config['doVariableDepth'] =   str(options[option_section,  'doVariableDepth'])
         if config['doVariableDepth'] not in ['0', '1']:
@@ -163,30 +165,35 @@ def execute(block, config):
 
     if config['config_file_path'] != None:
         spc.run(['./salmo', str(config['config_file_path']), '3', 'seed={0}'.format(config['seed']),
-        'nside={0}'.format(block['salmo', 'nside']),
+        'nside={0}'.format(block['glass', 'nside']),
         'N_z_map={0}'.format(block['shell_matter', 'nbin']),
         'bin_z_map={0}'.format(block['shell_matter', 'zlim']),
-        'denPrefix={0}/{1}_sample{2}/glass_denMap/{3}_denMap'.format(block['salmo', 'map_folder'], block['salmo', 'runTag'], block['salmo', 'counter'], block['salmo', 'prefix']),
-        'lenPrefix={0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['salmo', 'map_folder'], block['salmo', 'runTag'], block['salmo', 'counter'], block['salmo', 'prefix']),
-        'runTag=_{0}_sample{1}'.format(block['salmo', 'runTag'], block['salmo', 'counter'])
+        'denPrefix={0}/{1}_sample{2}/glass_denMap/{3}_denMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix']),
+        'lenPrefix={0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix']),
+        'runTag=_{0}_sample{1}'.format(block['glass', 'runTag'], block['glass', 'counter'])
         ], cwd=config['build_path'], text = True)
     
     else:
-        block['salmo', 'seed'] = config['seed']
-        block['salmo', 'nbTypes'] = config['nbTypes']
-        block['salmo', 'maskPath'] = config['maskPath']
-        block['salmo', 'nOfZPath'] = config['nOfZPath']
-        block['salmo', 'n_gal'] = config['n_gal']
-        block['salmo', 'doNoise'] = config['doNoise']
-        block['salmo', 'doWgt'] = config['doWgt']
-        block['salmo', 'signConv'] = config['signConv']
-        block['salmo', 'sigma_eps'] = config['sigma_eps']
-        block['salmo', 'doLensing'] = config['doLensing']
-        block['salmo', 'outPrefix'] = config['outPrefix']
-        block['salmo', 'outStyle'] = config['outStyle']
-        block['salmo', 'doVariableDepth'] = config['doVariableDepth']
-        block['salmo', 'denPrefix'] = '{0}/{1}_sample{2}/glass_denMap/{3}_denMap'.format(block['salmo', 'map_folder'], block['salmo', 'runTag'], block['salmo', 'counter'], block['salmo', 'prefix'])
-        block['salmo', 'lenPrefix'] = '{0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['salmo', 'map_folder'], block['salmo', 'runTag'], block['salmo', 'counter'], block['salmo', 'prefix'])
+        block[config['out_name'], 'map_folder'] = block['glass', 'map_folder']
+        block[config['out_name'], 'nside'] = block['glass', 'nside']
+        block[config['out_name'], 'prefix'] = block['glass', 'prefix']
+        block[config['out_name'], 'runTag'] = block['glass', 'runTag']
+        block[config['out_name'], 'counter']  =  block['glass', 'counter']
+        block[config['out_name'], 'seed'] = config['seed']
+        block[config['out_name'], 'nbTypes'] = config['nbTypes']
+        block[config['out_name'], 'maskPath'] = config['maskPath']
+        block[config['out_name'], 'nOfZPath'] = config['nOfZPath']
+        block[config['out_name'], 'n_gal'] = config['n_gal']
+        block[config['out_name'], 'doNoise'] = config['doNoise']
+        block[config['out_name'], 'doWgt'] = config['doWgt']
+        block[config['out_name'], 'signConv'] = config['signConv']
+        block[config['out_name'], 'sigma_eps'] = config['sigma_eps']
+        block[config['out_name'], 'doLensing'] = config['doLensing']
+        block[config['out_name'], 'outPrefix'] = config['outPrefix']
+        block[config['out_name'], 'outStyle'] = config['outStyle']
+        block[config['out_name'], 'doVariableDepth'] = config['doVariableDepth']
+        block[config['out_name'], 'denPrefix'] = '{0}/{1}_sample{2}/glass_denMap/{3}_denMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
+        block[config['out_name'], 'lenPrefix'] = '{0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
 
         mp = np.array(config['maskPath'].split(' '), dtype = str)
         maskPath = ['maskPath="{0} {1}"'.format(i, mp[i]) for i in range(len(mp))]
@@ -196,12 +203,12 @@ def execute(block, config):
 
         if config['doVariableDepth'] == '0':
             spc.run(['./salmo', 'default', '3', 'seed={0}'.format(config['seed']),
-            'verbose=0', 'nside={0}'.format(block['salmo', 'nside']),
+            'verbose=0', 'nside={0}'.format(block['glass', 'nside']),
             'N_z_map={0}'.format(block['shell_matter', 'nbin']),
             'bin_z_map={0}'.format(block['shell_matter', 'zlim']),
-            'denPrefix={0}'.format(block['salmo', 'denPrefix']),
-            'lenPrefix={0}'.format(block['salmo', 'lenPrefix']),
-            'runTag=_{0}_sample{1}'.format(block['salmo', 'runTag'], block['salmo', 'counter']),
+            'denPrefix={0}'.format(block[config['out_name'], 'denPrefix']),
+            'lenPrefix={0}'.format(block[config['out_name'], 'lenPrefix']),
+            'runTag=_{0}_sample{1}'.format(block['glass', 'runTag'], block['glass', 'counter']),
             'nbTypes={0}'.format(config['nbTypes']),
             'n_gal={0}'.format(str(config['n_gal'])[1:-1]),
             'doNoise={0}'.format(config['doNoise']),
@@ -214,16 +221,16 @@ def execute(block, config):
             'doVariableDepth={0}'.format(config['doVariableDepth'])
             ] + maskPath + nOfZPath, cwd=config['build_path'], text = True)
         else:
-            block['salmo', 'nbDepthMaps'] = config['nbDepthMaps']
-            block['salmo', 'depthMapPath'] = config['depthMapPath']
-            block['salmo', 'N_depth'] = config['N_depth']
-            block['salmo', 'bin_depth'] = config['bin_depth']
-            block['salmo', 'nbTomo'] = config['nbTomo']
-            block['salmo', 'a_n_gal'] = config['a_n_gal']
-            block['salmo', 'b_n_gal'] = config['b_n_gal']
-            block['salmo', 'a_sigma_eps'] = config['a_sigma_eps']
-            block['salmo', 'b_sigma_eps'] = config['b_sigma_eps']
-            block['salmo', 'VD_nOfZPath'] = config['VD_nOfZPath']
+            block[config['out_name'], 'nbDepthMaps'] = config['nbDepthMaps']
+            block[config['out_name'], 'depthMapPath'] = config['depthMapPath']
+            block[config['out_name'], 'N_depth'] = config['N_depth']
+            block[config['out_name'], 'bin_depth'] = config['bin_depth']
+            block[config['out_name'], 'nbTomo'] = config['nbTomo']
+            block[config['out_name'], 'a_n_gal'] = config['a_n_gal']
+            block[config['out_name'], 'b_n_gal'] = config['b_n_gal']
+            block[config['out_name'], 'a_sigma_eps'] = config['a_sigma_eps']
+            block[config['out_name'], 'b_sigma_eps'] = config['b_sigma_eps']
+            block[config['out_name'], 'VD_nOfZPath'] = config['VD_nOfZPath']
 
             dm = np.array(config['depthMapPath'].split(' '), dtype = str)
             depthMapPath = ['depthMapPath="{0} {1}"'.format(i, dm[i]) for i in range(len(dm))]
@@ -232,12 +239,12 @@ def execute(block, config):
             VD_nOfZPath = ['VD_nOfZPath="{0} {1}"'.format(i, vd[i]) for i in range(len(vd))]
 
             spc.run(['./salmo', 'default', '3', 'seed={0}'.format(config['seed']),
-            'verbose=0', 'nside={0}'.format(block['salmo', 'nside']),
+            'verbose=0', 'nside={0}'.format(block['glass', 'nside']),
             'N_z_map={0}'.format(block['shell_matter', 'nbin']),
             'bin_z_map={0}'.format(str(block['shell_matter', 'zlim'])[1:-1]),
-            'denPrefix={0}'.format(block['salmo', 'denPrefix']),
-            'lenPrefix={0}'.format(block['salmo', 'lenPrefix']),
-            'runTag=_{0}_sample{1}'.format(block['salmo', 'runTag'], block['salmo', 'counter']),
+            'denPrefix={0}'.format(block[config['out_name'], 'denPrefix']),
+            'lenPrefix={0}'.format(block[config['out_name'], 'lenPrefix']),
+            'runTag=_{0}_sample{1}'.format(block['glass', 'runTag'], block['glass', 'counter']),
             'nbTypes={0}'.format(config['nbTypes']),
             'n_gal={0}'.format(str(config['n_gal'])[1:-1]),
             'doNoise={0}'.format(config['doNoise']),
@@ -259,9 +266,10 @@ def execute(block, config):
             ] + maskPath + nOfZPath + depthMapPath + VD_nOfZPath, cwd=config['build_path'], text = True)
 
     if config['clean']:
-        print('Deleting input files from GLASS for sample {0}...'.format(block['salmo', 'counter']))
-        shutil.rmtree('{0}/{1}_sample{2}'.format(block['salmo', 'map_folder'], block['salmo', 'runTag'], block['salmo', 'counter']))
-        return 0
+        print('Deleting input files from GLASS for sample {0}...'.format(block['glass', 'counter']))
+        shutil.rmtree('{0}/{1}_sample{2}'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter']))
+    
+    return 0
 
 def cleanup(config):
     pass

@@ -81,12 +81,17 @@ def save_fits(name, map):
 
 def setup(options):
     config = {}
+
+    config['in_name'] = options.get_string(option_section, 'in_name')
+
     config['out']       = options.get_string(option_section, "out") #shear
 
     if config['out'] != 'shear':
         raise Exception('Currently only cosmics shear is supported as an output.')
 
     config['out_mode']  = options.get_string(option_section, "out_mode") #map or pcl
+
+    config['out_name'] = options.get_string(option_section, 'out_name')
 
     config['nside'] = options.get_int(option_section, "nside")
 
@@ -104,17 +109,17 @@ def setup(options):
     return config
 
 def execute(block, config):
-    if block['salmo', 'outStyle'] != '64':
+    if block[config['in_name'], 'outStyle'] != '64':
         raise Exception('SALMO outputs are in the incorrect outStyle, please set outStyle=64, so different fields are separated in different .fits files.')
 
     nside = config['nside']
-    vd = block['salmo', 'doVariableDepth']
-    lensing = np.array(str(block['salmo', 'doLensing']).split(' '), dtype = str)
+    vd = block[config['in_name'], 'doVariableDepth']
+    lensing = np.array(str(block[config['in_name'], 'doLensing']).split(' '), dtype = str)
 
     nbLensFields = len(np.where(lensing == '0')[0])
     nbSourceFields = len(np.where(lensing == '1')[0])
 
-    nz = np.array(str(block['salmo', 'nOfZPath']).split(' '), dtype = str)
+    nz = np.array(str(block[config['in_name'], 'nOfZPath']).split(' '), dtype = str)
 
     mapping = {}
     for i in np.unique(nz):
@@ -123,8 +128,8 @@ def execute(block, config):
     joint_fields = list(mapping.values())   
 
     if str(vd) == '1':
-        ndepth = block['salmo', 'nbDepthMaps']
-        ntomo = block['salmo', 'nbTomo']
+        ndepth = block[config['in_name'], 'nbDepthMaps']
+        ntomo = block[config['in_name'], 'nbTomo']
         for i in range(int(ntomo)):
             joint_fields.append(np.array([nbLensFields + nbSourceFields + n + int(ndepth)*i for n in range(int(ndepth))]))
 
@@ -144,7 +149,7 @@ def execute(block, config):
             if i >= nbLensFields:
                 she = np.zeros(hp.nside2npix(nside), dtype=complex)
                 num = np.zeros_like(she, dtype=int)
-                file = '{0}_{1}_sample{2}_type{3}.fits'.format(block['salmo', 'outPrefix'], block['salmo', 'runTag'], block['salmo', 'counter'], i)
+                file = '{0}_{1}_sample{2}_type{3}.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], i)
                 print('  Reading {0}...'.format(file))
                 data = fits.getdata(file, 1)
                 if config['clean']:
@@ -157,14 +162,14 @@ def execute(block, config):
                 lens = False
             else:
                 if config['clean']:
-                    file = '{0}_{1}_sample{2}_type{3}.fits'.format(block['salmo', 'outPrefix'], block['salmo', 'runTag'], block['salmo', 'counter'], i)
+                    file = '{0}_{1}_sample{2}_type{3}.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], i)
                     os.remove(file)
                 lens = True
                 pass
         if lens == False:
             print('  Joining the following sample types which are all within tomographic bin {1}: {0}'.format(group, tomo+1))
             if 'map' in config['out_mode']:
-                filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block['salmo', 'outPrefix'], block['salmo', 'runTag'], block['salmo', 'counter'], tomo)
+                filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
                 print('    Saving consolidated count and shear fields for tomographic bin {0} as {1}...'.format(tomo+1, filename))
                 counts = np.add.reduce(num_group)
                 shear = np.add.reduce(shear_group)
@@ -189,22 +194,22 @@ def execute(block, config):
         print('Making shear maps and computing their alms took {0} seconds'.format(round(toc-tic, 3)))
 
     if 'pcl' in config['out_mode']:
-        block['shear_pcl', "is_auto"] = 'True'
-        block['shear_pcl', "sample_a"] = 'source'
-        block['shear_pcl', "sample_b"] = 'source'
-        block['shear_pcl', "nbin"] = tomo
-        block['shear_pcl', "nbin_a"] = tomo
-        block['shear_pcl', "nbin_b"] = tomo
-        block['shear_pcl', "ell"] = np.arange(0, config['lmax']+1)
+        block[config['out_name'], "is_auto"] = 'True'
+        block[config['out_name'], "sample_a"] = 'source'
+        block[config['out_name'], "sample_b"] = 'source'
+        block[config['out_name'], "nbin"] = tomo
+        block[config['out_name'], "nbin_a"] = tomo
+        block[config['out_name'], "nbin_b"] = tomo
+        block[config['out_name'], "ell"] = np.arange(0, config['lmax']+1)
         if nbSourceFields > 0:
-            block['shear_pcl', 'n_density'] = block['salmo', 'n_gal'][nbLensFields:]
-            block['shear_pcl', 'sigma_e'] = block['salmo', 'sigma_eps'][nbLensFields:]
+            block[config['out_name'], 'n_density'] = block[config['in_name'], 'n_gal'][nbLensFields:]
+            block[config['out_name'], 'sigma_e'] = block[config['in_name'], 'sigma_eps'][nbLensFields:]
 
         if str(vd) == '1':
-            block['shear_pcl', 'a_n_density'] = block['salmo', 'a_n_gal']
-            block['shear_pcl', 'b_n_density'] = block['salmo', 'b_n_gal']
-            block['shear_pcl', 'a_sigma_e'] = block['salmo', 'a_sigma_eps']
-            block['shear_pcl', 'b_sigma_e'] = block['salmo', 'b_sigma_eps']
+            block[config['out_name'], 'a_n_density'] = block[config['in_name'], 'a_n_gal']
+            block[config['out_name'], 'b_n_density'] = block[config['in_name'], 'b_n_gal']
+            block[config['out_name'], 'a_sigma_e'] = block[config['in_name'], 'a_sigma_eps']
+            block[config['out_name'], 'b_sigma_e'] = block[config['in_name'], 'b_sigma_eps']
 
         print('Calculating angular power spectra...')
         tic = time.time()
@@ -212,7 +217,7 @@ def execute(block, config):
             for j in range(i+1):
                 print('  Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
                 pcl = hp.alm2cl([alm[i][0], alm[i][1]], [alm[j][0], alm[j][1]], lmax = int(config['lmax']))[0] #EE mode
-                block['shear_pcl', 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
         toc = time.time()
         print('Calculating angular power spectra took {0} seconds'.format(round(toc-tic, 3)))
     return 0

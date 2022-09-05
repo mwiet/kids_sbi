@@ -6,6 +6,9 @@ def setup(options):
     config = {}
     config['num_bands'] = options.get_int(option_section, "num_bands", default=8)
     config['min_ell'] = options.get_double(option_section, "min_ell", default=1.0)
+    config['in_name'] = options.get_string(option_section, 'in_name')
+    config['noisy_in_name'] = options.get_string(option_section, 'noisy_in_name')
+    config['out_name'] = options.get_string(option_section, 'out_name')
     return config
 
 def bandpower_integral(x, y):
@@ -32,7 +35,7 @@ def average_bands(l, cls, n):
     return bandpowers
 
 def execute(block, config):
-    input_section = "shear_cl"
+    input_section = config['in_name']
 
     # Read minimum ell value
     l_min = config['min_ell']
@@ -53,7 +56,7 @@ def execute(block, config):
 
     for i in range(n_bins):
         for j in range(i+1):
-            noisey_cl = block['shear_rec_cl', 'bin_{0}_{1}'.format(i+1,j+1)]
+            noisey_cl = block[config['noisy_in_name'], 'bin_{0}_{1}'.format(i+1,j+1)]
             noisey_cl = noisey_cl[-num_ell:]
             theory_cl = block[input_section, 'bin_{0}_{1}'.format(i+1,j+1)]
             theory_cl = theory_cl[-num_ell:]
@@ -64,8 +67,8 @@ def execute(block, config):
             theory_bandpowers_stacked = np.append(theory_bandpowers_stacked, band_average)
             block[input_section, 'bandpowers_bin_{0}_{1}'.format(i+1,j+1)] = band_average
 
-    block["bandpowers", "noisey_bandpower_cls"] = noisey_bandpowers_stacked.reshape(num_bands,-1).T.flatten() # So the data structure is done in stacks of "l-bands" instead of unique tomographic bins
-    block["bandpowers", "theory_bandpower_cls"] = theory_bandpowers_stacked.reshape(num_bands,-1).T.flatten()
+    block[config['out_name'], "noisey_bandpower_cls"] = noisey_bandpowers_stacked.reshape(num_bands,-1).T.flatten() # So the data structure is done in stacks of "l-bands" instead of unique tomographic bins
+    block[config['out_name'], "theory_bandpower_cls"] = theory_bandpowers_stacked.reshape(num_bands,-1).T.flatten()
     print("Writing bandpowers to its own block")
 
     return 0
