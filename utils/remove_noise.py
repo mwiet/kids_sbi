@@ -42,16 +42,17 @@ def execute(block, config):
         
         n_density = n_density*arcmin2_in_sphere/(4*np.pi)
         ell =  block[config['in_name'], 'ell']
-        area = config['fsky']*4*np.pi
         print("Calculating shot and shape noise...")
         counter = 0
         for i in range(nbin):
             for j in range(i+1):
                 shear_cl = block[config['in_name'], 'bin_{0}_{1}'.format(i+1, j+1)]
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=RuntimeWarning)
-                    noise = np.sqrt(np.pi/(area*ell*n_density[i]*n_density[j]))*sigma_e[i]*sigma_e[j]
-                noise[0] = 0
+                if i == j:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=RuntimeWarning)
+                        noise = sigma_e[i]**2/2*n_density[i]
+                else:
+                    noise = 0
                 shear_cl -= noise
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
                 block['{0}_noise'.format(config['out_name']), 'bin_{0}_{1}'.format(i+1,j+1)] = noise
@@ -71,7 +72,6 @@ def execute(block, config):
         block['{0}_noise'.format(config['out_name']), "nbin"] = nbin
         block['{0}_noise'.format(config['out_name']), "nbin_a"] = nbin
         block['{0}_noise'.format(config['out_name']), "nbin_b"] = nbin
-        block['{0}_noise'.format(config['out_name']), "ell"] = ell
         
     else:
         raise Exception('Unsupported output.')

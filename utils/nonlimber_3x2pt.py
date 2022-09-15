@@ -19,10 +19,10 @@ def gen_log_space(limit, n):
 
 def setup(options):
     config = {}
-    config["ell_min"]   = options.get_double(option_section, "ell_min")
-    config["ell_max"]   = options.get_double(option_section, "ell_max")
-    config["ell_limber"]   = options.get_double(option_section, "ell_limber")
-    config["ell_nonlimber"]   = options.get_double(option_section, "ell_nonlimber")
+    config["ell_min"]   = options.get_int(option_section, "ell_min")
+    config["ell_max"]   = options.get_int(option_section, "ell_max")
+    config["ell_limber"]   = options.get_int(option_section, "ell_limber")
+    config["ell_nonlimber"]   = options.get_int(option_section, "ell_nonlimber")
     config["n_ell"]     = options.get_int(option_section, "n_ell")
     
     config["data_sets"] = options.get_string(option_section, "data_sets") #source or lens
@@ -152,16 +152,15 @@ def execute(block, config):
 
     ell = list(map(int, gen_log_space(config["ell_max"], int(config["n_ell"])) + config["ell_min"]))
 
-    print(np.shape(chi_cl))
     print('Launching LevinPower...')
     lp = levinpower.LevinPower(False, number_count = int(number_count),
                             z_bg = z_distance, chi_bg = chi_distance,
                             chi_cl = chi_cl, kernel = kernels.T,
                             k_pk = k_pk, z_pk = z_pk, pk = power_spectrum, boxy = False)
     
-    lp.set_parameters(ELL_limber = config["ell_limber"], ELL_nonlimber = config["ell_nonlimber"], 
-                    max_number_subintervals =20, minell = config["ell_min"], maxell = config["ell_max"],
-                    N_nonlimber = 20, N_limber = 100, Ninterp = 600)
+    lp.set_parameters(ELL_limber = int(config["ell_limber"]), ELL_nonlimber = int(config["ell_nonlimber"]), 
+                    max_number_subintervals =20, minell = int(config["ell_min"]), maxell = int(config["ell_max"]),
+                    N_nonlimber = 40, N_limber = 100, Ninterp = 600)
 
     print('Computing angular power spectra...')
     Cl_gg, Cl_gs, Cl_ss = lp.compute_C_ells(ell)

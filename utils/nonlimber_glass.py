@@ -21,8 +21,8 @@ def gen_log_space(limit, n):
 
 def setup(options):
     config = {}
-    config["ell_min"]   = options.get_double(option_section, "ell_min")
-    config["ell_max"]   = options.get_double(option_section, "ell_max")
+    config["ell_min"]   = options.get_int(option_section, "ell_min")
+    config["ell_max"]   = options.get_int(option_section, "ell_max")
     config["ell_limber"]   = options.get_int(option_section, "ell_limber")
     config["ell_nonlimber"]   = options.get_int(option_section, "ell_nonlimber")
     config["n_ell"]     = options.get_int(option_section, "n_ell")
