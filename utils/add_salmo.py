@@ -4,6 +4,7 @@ from cosmosis.datablock import names, option_section
 import subprocess as spc
 import warnings
 import shutil
+import os
 
 def setup(options):
 
@@ -36,12 +37,37 @@ def setup(options):
                 raise Exception('maskPath must have a length of nbTypes')
 
         try:
+            config['doLensing'] = options[option_section,  'doLensing']
+        except:
+            config['doLensing'] = ''
+
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=FutureWarning)
+            if  config['doLensing'] != '':
+                if len(config['doLensing']) != int(config['nbTypes']):
+                    raise Exception('doLensing must have nbType number of values')     
+                else:
+                    config['doLensing'] = str(config['doLensing'])[1:-1]
+
+        config['source_shifts']       = options[option_section,  "source_shifts"]
+
+        if type(config['source_shifts']) != bool:
+            raise Exception("The clean must be either 'T' or 'F'")
+        
+        try:
             config['nOfZPath'] = options.get_string(option_section, 'nOfZPath')
         except:
             config['nOfZPath'] = ''
 
-        if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != int(config['nbTypes']):
-                raise Exception('nOfZPath must have a length of nbTypes')
+        if config['source_shifts']:
+            lensing = np.array(str(config['doLensing']).split(' '), dtype = str)
+            nbLensFields = len(np.where(lensing == '0')[0])
+            if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != nbLensFields:
+                raise Exception("""When source_shifts = T, you must only provide the nOfZPath for each lens sample.
+                                The path names leading to the nofzs of the source samples will be read from the shift_nz module.""")
+        else:
+            if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != int(config['nbTypes']):
+                raise Exception('When source_shifts = F, nOfZPath must have a length of nbTypes')
         
         try:
             config['n_gal'] = options[option_section,  'n_gal'] #float array with n_gal for each tomographic bin
@@ -78,19 +104,6 @@ def setup(options):
                 if len(config['sigma_eps']) != int(config['nbTypes']):
                     raise Exception('sigma_eps must have nbType number of values')
         
-        try:
-            config['doLensing'] = options[option_section,  'doLensing']
-        except:
-            config['doLensing'] = ''
-
-        with warnings.catch_warnings():
-            warnings.simplefilter(action='ignore', category=FutureWarning)
-            if  config['doLensing'] != '':
-                if len(config['doLensing']) != int(config['nbTypes']):
-                    raise Exception('doLensing must have nbType number of values')     
-                else:
-                    config['doLensing'] = str(config['doLensing'])[1:-1]
-
         config['outPrefix'] = options.get_string(option_section, 'outPrefix')
         config['outStyle'] =  str(options[option_section,  'outStyle'])
         if config['outStyle'] not in ['0', '1', '64']:
@@ -149,14 +162,22 @@ def setup(options):
             if len(config['b_sigma_eps']) != int(config['nbTomo']):
                 raise Exception('b_sigma_eps must have nbTomo values')
 
-            config['VD_nOfZPath'] = options.get_string(option_section, 'VD_nOfZPath')
-
-            if len(np.array(config['VD_nOfZPath'].split(' '), dtype = str)) != int(config['nbTomo'])*int(config['N_depth']):
-                raise Exception('VD_nOfZPath must have a length of nbTomo*N_depth')
-    
+            if type(config['source_shifts']) != bool:
+                raise Exception("The clean must be either 'T' or 'F'")
+            
+            if not config['source_shifts']:
+                config['VD_nOfZPath'] = options.get_string(option_section, 'VD_nOfZPath')
+                if len(np.array(config['VD_nOfZPath'].split(' '), dtype = str)) != int(config['nbTomo'])*int(config['N_depth']):
+                    raise Exception('VD_nOfZPath must have a length of nbTomo*N_depth')
+        
     config['clean']       = options[option_section,  "clean"]
 
     if type(config['clean']) != bool:
+        raise Exception("The clean must be either 'T' or 'F'")
+
+    config['clean_deltaz'] = options[option_section,  "clean_deltaz"]
+
+    if type(config['clean_deltaz']) != bool:
         raise Exception("The clean must be either 'T' or 'F'")
         
     return config
@@ -174,6 +195,9 @@ def execute(block, config):
         ], cwd=config['build_path'], text = True)
     
     else:
+        if config['source_shifts'] and config['doVariableDepth'] == '0':
+            config['nOfZPath'] = config['nOfZPath'] + ' ' + block['shift_nz', 'paths']
+
         block[config['out_name'], 'map_folder'] = block['glass', 'map_folder']
         block[config['out_name'], 'nside'] = block['glass', 'nside']
         block[config['out_name'], 'prefix'] = block['glass', 'prefix']
@@ -221,6 +245,11 @@ def execute(block, config):
             'doVariableDepth={0}'.format(config['doVariableDepth'])
             ] + maskPath + nOfZPath, cwd=config['build_path'], text = True)
         else:
+            if config['source_shifts']:
+                config['VD_nOfZPath'] = block['shift_nz', 'paths']
+                if len(np.array(config['VD_nOfZPath'].split(' '), dtype = str)) != int(config['nbTomo'])*int(config['N_depth']):
+                    raise Exception('VD_nOfZPath from shift_nz must have a length of nbTomo*N_depth')
+
             block[config['out_name'], 'nbDepthMaps'] = config['nbDepthMaps']
             block[config['out_name'], 'depthMapPath'] = config['depthMapPath']
             block[config['out_name'], 'N_depth'] = config['N_depth']
@@ -268,7 +297,12 @@ def execute(block, config):
     if config['clean']:
         print('Deleting input files from GLASS for sample {0}...'.format(block['glass', 'counter']))
         shutil.rmtree('{0}/{1}_sample{2}'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter']))
-    
+
+    if config['source_shifts'] and config['clean_deltaz']:
+        print('Deleting temporarily saved shifted source redshift distributions...')
+        for name in np.array(str(block['shift_nz', 'paths']).split(' '), dtype = str):
+            os.remove(name)
+
     return 0
 
 def cleanup(config):
