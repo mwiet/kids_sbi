@@ -39,13 +39,16 @@ def execute(block, config):
             mapping[file] = np.where(nz == file)[0]
 
             n = np.loadtxt(file)
-            bias = block['nofz_shifts', 'uncorr_bias_{0}'.format(i+1)]
+            bias = block['nofz_shifts', 'bias_{0}'.format(i+1)]
 
             print('Shifting source redshift distribution {0} by a delta_z of {1}...'.format(i+1, bias))
 
             interp = interp1d(n.T[0] - bias, n.T[1], fill_value="extrapolate")
             new_file = file[:-6] + '_deltaz_{0}.ascii'.format(bias)
             new_files.append(new_file)
+            
+            print('Saving {0}...'.format(new_file))
+
             np.savetxt(new_file, np.array([n.T[0], interp(n.T[0])]).T)
 
         repeated_fields = list(mapping.values())
@@ -57,14 +60,16 @@ def execute(block, config):
             for j in range(config['N_depth']):
                 file = nz[counter]
                 n = np.loadtxt(file)
-                bias = block['nofz_shifts', 'uncorr_bias_{0}'.format(i+1)]
+                bias = block['nofz_shifts', 'bias_{0}'.format(i+1)]
 
                 print('Shifting source redshift distribution {0} for depth bin {1} by a delta_z of {2}...'.format(i+1, j+1, bias))
 
                 interp = interp1d(n.T[0] - bias, n.T[1], fill_value="extrapolate")
                 new_file = file[:-6] + '_deltaz_{0}.ascii'.format(bias)
                 new_files.append(new_file)
+
                 print('Saving {0}...'.format(new_file))
+                
                 np.savetxt(new_file, np.array([n.T[0], interp(n.T[0])]).T)
                 counter += 1
         paths = np.array(new_files)       
