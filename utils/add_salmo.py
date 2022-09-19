@@ -300,7 +300,7 @@ def execute(block, config):
 
     if config['source_shifts'] and config['clean_deltaz']:
         print('Deleting temporarily saved shifted source redshift distributions...')
-        for name in np.array(str(block['shift_nz', 'paths']).split(' '), dtype = str):
+        for name in np.unique(np.array(str(block['shift_nz', 'paths']).split(' '), dtype = str)):
             os.remove(name)
 
     return 0
