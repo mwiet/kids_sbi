@@ -26,9 +26,12 @@ def execute(block, config):
         block[config['out_name'], "nbin_a"] = nbin
         block[config['out_name'], "nbin_b"] = nbin
         block[config['out_name'], "ell"] = block[config['in_name'], 'ell']
+        block[config['out_name'], 'nOfZPath'] = block[config['in_name'], 'nOfZPath']
         try:
             block[config['out_name'], "n_density"] = block[config['in_name'], "n_density"]
             block[config['out_name'], "sigma_e"] = block[config['in_name'], "sigma_e"]
+            block[config['out_name'], "nbLensFields"] = block[config['in_name'], "nbLensFields"]
+            block[config['out_name'], "nbSourceFields"] = block[config['in_name'], "nbSourceFields"]
         except:
             print('Only variable depth bins given.')
             pass
@@ -38,6 +41,8 @@ def execute(block, config):
             block[config['out_name'], "b_n_density"] = block[config['in_name'], 'b_n_density']
             block[config['out_name'], "a_sigma_e"] = block[config['in_name'], "a_sigma_e"]
             block[config['out_name'], "b_sigma_e"] = block[config['in_name'], "b_sigma_e"]
+            block[config['out_name'], 'bin_depth'] = block[config['in_name'], 'bin_depth']
+            block[config['out_name'], 'bin_depth'] = block[config['in_name'], 'bin_depth']
         except:
             print('No variable depth bins given.')
             pass

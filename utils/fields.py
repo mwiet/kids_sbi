@@ -114,15 +114,15 @@ def execute(block, config):
 
     nside = config['nside']
     vd = block[config['in_name'], 'doVariableDepth']
-    lensing = np.array(str(block[config['in_name'], 'doLensing']).split(' '), dtype = str)
 
-    nbLensFields = len(np.where(lensing == '0')[0])
-    nbSourceFields = len(np.where(lensing == '1')[0])
+    nbLensFields = block[config['in_name'], 'nbLensFields']
+    nbSourceFields = block[config['in_name'], 'nbSourceFields']
 
     nz = np.array(str(block[config['in_name'], 'nOfZPath']).split(' '), dtype = str)
 
     mapping = {}
-    for i in np.unique(nz):
+    _, index = np.unique(nz, return_index=True)
+    for i in nz[np.sort(index)]:
         mapping[i] = np.where(nz == i)[0]
 
     joint_fields = list(mapping.values())   
@@ -139,6 +139,8 @@ def execute(block, config):
 
     print('Making shear maps...')
     tic = time.time()
+
+    print(joint_fields)
 
     #Shear
     tomo = 0
@@ -180,7 +182,7 @@ def execute(block, config):
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 shear = np.add.reduce(shear_group)
                 print('  -----')
-                alm.append([hp.sphtfunc.map2alm(shear.real, use_pixel_weights = True), hp.sphtfunc.map2alm(shear.imag, use_pixel_weights = True)])
+                alm.append(hp.sphtfunc.map2alm_spin([shear.real, -1*shear.imag], spin = 2, lmax = 4096))
                 del shear
             tomo += 1
     toc = time.time()
@@ -201,23 +203,27 @@ def execute(block, config):
         block[config['out_name'], "nbin_a"] = tomo
         block[config['out_name'], "nbin_b"] = tomo
         block[config['out_name'], "ell"] = np.arange(0, config['lmax']+1)
+        block[config['out_name'], 'nOfZPath'] = block[config['in_name'], 'nOfZPath']
         if nbSourceFields > 0:
             block[config['out_name'], 'n_density'] = block[config['in_name'], 'n_gal'][nbLensFields:]
             block[config['out_name'], 'sigma_e'] = block[config['in_name'], 'sigma_eps'][nbLensFields:]
+            block[config['out_name'], "nbLensFields"] = block[config['in_name'], "nbLensFields"]
+            block[config['out_name'], "nbSourceFields"] = block[config['in_name'], "nbSourceFields"]
 
         if str(vd) == '1':
             block[config['out_name'], 'a_n_density'] = block[config['in_name'], 'a_n_gal']
             block[config['out_name'], 'b_n_density'] = block[config['in_name'], 'b_n_gal']
             block[config['out_name'], 'a_sigma_e'] = block[config['in_name'], 'a_sigma_eps']
             block[config['out_name'], 'b_sigma_e'] = block[config['in_name'], 'b_sigma_eps']
+            block[config['out_name'], 'bin_depth'] = block[config['in_name'], 'bin_depth']
 
         print('Calculating angular power spectra...')
         tic = time.time()
         for i in range(tomo):
             for j in range(i+1):
                 print('  Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
-                pcl = hp.alm2cl([alm[i][0], alm[i][1]], [alm[j][0], alm[j][1]], lmax = int(config['lmax']))[0] #EE mode
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcl
+                pcls = hp.alm2cl([alm[i][0], alm[i][1]], [alm[j][0], alm[j][1]], lmax = int(config['lmax']))
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[0]
         toc = time.time()
         print('Calculating angular power spectra took {0} seconds'.format(round(toc-tic, 3)))
     return 0

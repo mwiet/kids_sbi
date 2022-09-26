@@ -61,8 +61,9 @@ def setup(options):
 
         if config['source_shifts']:
             lensing = np.array(str(config['doLensing']).split(' '), dtype = str)
-            nbLensFields = len(np.where(lensing == '0')[0])
-            if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != nbLensFields:
+            config['nbLensFields'] = len(np.where(lensing == '0')[0])
+            config['nbSourceFields'] = len(np.where(lensing == '1')[0])
+            if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != config['nbLensFields']:
                 raise Exception("""When source_shifts = T, you must only provide the nOfZPath for each lens sample.
                                 The path names leading to the nofzs of the source samples will be read from the shift_nz module.""")
         else:
@@ -218,6 +219,8 @@ def execute(block, config):
         block[config['out_name'], 'doVariableDepth'] = config['doVariableDepth']
         block[config['out_name'], 'denPrefix'] = '{0}/{1}_sample{2}/glass_denMap/{3}_denMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
         block[config['out_name'], 'lenPrefix'] = '{0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
+        block[config['out_name'], 'nbLensFields'] = config['nbLensFields']
+        block[config['out_name'], 'nbSourceFields'] = config['nbSourceFields']
 
         mp = np.array(config['maskPath'].split(' '), dtype = str)
         maskPath = ['maskPath="{0} {1}"'.format(i, mp[i]) for i in range(len(mp))]

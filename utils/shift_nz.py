@@ -33,7 +33,8 @@ def execute(block, config):
 
     new_files = []
     if config['doVariableDepth'] == '0':
-        nz_unique = np.unique(nz)
+        _, index = np.unique(nz, return_index=True)
+        nz_unique = nz[np.sort(index)]
         mapping = {}
         for i, file in enumerate(nz_unique):
             mapping[file] = np.where(nz == file)[0]
