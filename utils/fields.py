@@ -182,7 +182,7 @@ def execute(block, config):
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 shear = np.add.reduce(shear_group)
                 print('  -----')
-                alm.append(hp.sphtfunc.map2alm_spin([shear.real, -1*shear.imag], spin = 2, lmax = 4096))
+                alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = 4096))
                 del shear
             tomo += 1
     toc = time.time()
