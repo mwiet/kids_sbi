@@ -18,7 +18,10 @@ def setup(options):
     except:
         config['config_file_path'] = None
     
-    config['seed'] = options.get_string(option_section, 'seed') #'random' or int
+    try:
+        config['seed'] = options.get_int(option_section, 'seed') #'random' or int
+    except:
+        config['seed'] = options.get_string(option_section, 'seed')
 
     if config['config_file_path'] == None:
         #Selection function params
@@ -59,10 +62,11 @@ def setup(options):
         except:
             config['nOfZPath'] = ''
 
+        lensing = np.array(str(config['doLensing']).split(' '), dtype = str)
+        config['nbLensFields'] = len(np.where(lensing == '0')[0])
+        config['nbSourceFields'] = len(np.where(lensing == '1')[0])
+
         if config['source_shifts']:
-            lensing = np.array(str(config['doLensing']).split(' '), dtype = str)
-            config['nbLensFields'] = len(np.where(lensing == '0')[0])
-            config['nbSourceFields'] = len(np.where(lensing == '1')[0])
             if len(np.array(config['nOfZPath'].split(' '), dtype = str)) != config['nbLensFields']:
                 raise Exception("""When source_shifts = T, you must only provide the nOfZPath for each lens sample.
                                 The path names leading to the nofzs of the source samples will be read from the shift_nz module.""")
@@ -146,6 +150,8 @@ def setup(options):
                 int(config['nbTomo'])
             except:
                 raise Exception('nbTomo must be a positive integer')
+
+            config['nbSourceFields_vd'] = int(config['nbSourceFields']) + int(config['nbDepthMaps'])*int(config['nbTomo'])
             
             config['a_n_gal'] =  options[option_section,  'a_n_gal']
             if len(config['a_n_gal']) != int(config['nbTomo']):
@@ -263,6 +269,7 @@ def execute(block, config):
             block[config['out_name'], 'a_sigma_eps'] = config['a_sigma_eps']
             block[config['out_name'], 'b_sigma_eps'] = config['b_sigma_eps']
             block[config['out_name'], 'VD_nOfZPath'] = config['VD_nOfZPath']
+            block[config['out_name'], 'nbSourceFields_vd'] = config['nbSourceFields_vd']
 
             dm = np.array(config['depthMapPath'].split(' '), dtype = str)
             depthMapPath = ['depthMapPath="{0} {1}"'.format(i, dm[i]) for i in range(len(dm))]
