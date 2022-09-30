@@ -234,6 +234,8 @@ def execute(block, config):
         nz = np.array(config['nOfZPath'].split(' '), dtype = str)
         nOfZPath = ['nOfZPath="{0} {1}"'.format(i, nz[i]) for i in range(len(nz))]
 
+        print('Running SALMO with seed {0}...'.format(config['seed']))
+
         if config['doVariableDepth'] == '0':
             spc.run(['./salmo', 'default', '3', 'seed={0}'.format(config['seed']),
             'verbose=0', 'nside={0}'.format(block['glass', 'nside']),
