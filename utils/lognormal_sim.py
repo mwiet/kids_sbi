@@ -145,10 +145,10 @@ def execute(block, config):
                 counter += 1
             else:
                 try:
-                    os.mkdir(path)
+                    os.mkdir(path, parents=True)
                     print('Creating {0}...'.format(path))
-                    os.mkdir('{0}/glass_denMap'.format(path))
-                    os.mkdir('{0}/glass_lenMap'.format(path))
+                    os.mkdir('{0}/glass_denMap'.format(path), parents=True)
+                    os.mkdir('{0}/glass_lenMap'.format(path), parents=True)
                     config['counter'] = counter
                     new_path = True
                 except:
