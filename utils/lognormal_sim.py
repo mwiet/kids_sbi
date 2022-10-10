@@ -56,6 +56,11 @@ def setup(options):
 
     config['ia'] = options.get_string(option_section, "ia")
 
+    try:
+        config['seed'] = options.get_int(option_section, "seed")
+    except:
+        config['seed'] = None
+        
     return config
 
 @njit(nogil=True)
@@ -145,10 +150,10 @@ def execute(block, config):
                 counter += 1
             else:
                 try:
-                    os.mkdir(path)
+                    os.mkdir(path, parents=True)
                     print('Creating {0}...'.format(path))
-                    os.mkdir('{0}/glass_denMap'.format(path))
-                    os.mkdir('{0}/glass_lenMap'.format(path))
+                    os.mkdir('{0}/glass_denMap'.format(path), parents=True)
+                    os.mkdir('{0}/glass_lenMap'.format(path), parents=True)
                     config['counter'] = counter
                     new_path = True
                 except:
@@ -181,14 +186,14 @@ def execute(block, config):
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear()]
         else:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear()]
         
@@ -220,7 +225,7 @@ def execute(block, config):
             save_fits(filename_denMap, delta[s])
             #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
             print('Saving {0}...'.format(filename_lenMap))
-            save_fits(filename_lenMap, [kappa[s], -1*gamma1[s], gamma2[s]])
+            save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
             #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
 
     else:
@@ -241,7 +246,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear(),
@@ -252,7 +257,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear(),
             glass.galaxies.gal_dist_uniform(z, dndz),
