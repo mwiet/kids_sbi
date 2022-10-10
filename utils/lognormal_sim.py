@@ -55,7 +55,12 @@ def setup(options):
             raise Exception('Currently only support a single value of sigma_e for all bins.')
 
     config['ia'] = options.get_string(option_section, "ia")
-
+    
+    try:
+        config['seed'] = opitions.get_int(option_section, "seed")
+    except:
+        config['seed'] = None
+        
     return config
 
 @njit(nogil=True)
@@ -181,14 +186,14 @@ def execute(block, config):
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear()]
         else:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear()]
         
@@ -241,7 +246,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear(),
@@ -252,7 +257,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear(),
             glass.galaxies.gal_dist_uniform(z, dndz),
