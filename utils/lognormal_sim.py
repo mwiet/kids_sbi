@@ -58,8 +58,10 @@ def setup(options):
 
     try:
         config['seed'] = options.get_int(option_section, "seed")
+        config['rng'] = np.random.default_rng(config['seed'])
     except:
         config['seed'] = None
+        config['rng'] = None
         
     return config
 
@@ -150,10 +152,10 @@ def execute(block, config):
                 counter += 1
             else:
                 try:
-                    os.mkdir(path, parents=True)
+                    os.mkdir(path)
                     print('Creating {0}...'.format(path))
-                    os.mkdir('{0}/glass_denMap'.format(path), parents=True)
-                    os.mkdir('{0}/glass_lenMap'.format(path), parents=True)
+                    os.mkdir('{0}/glass_denMap'.format(path))
+                    os.mkdir('{0}/glass_lenMap'.format(path))
                     config['counter'] = counter
                     new_path = True
                 except:
@@ -186,14 +188,14 @@ def execute(block, config):
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear()]
         else:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear()]
         
@@ -216,6 +218,7 @@ def execute(block, config):
         block['glass', 'prefix'] = config['prefix']
         block['glass', 'runTag'] = config['runTag']
         block['glass', 'counter']  =  config['counter']
+        block['glass', 'seed']  =  config['seed']
 
         for s in range(nshell):
             filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
@@ -246,7 +249,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear(),
@@ -257,7 +260,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear(),
             glass.galaxies.gal_dist_uniform(z, dndz),
