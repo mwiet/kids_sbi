@@ -93,6 +93,11 @@ def setup(options):
 
     config['out_name'] = options.get_string(option_section, 'out_name')
 
+    config['shear_bias'] = options.get_bool(option_section, 'shear_bias')
+
+    if config['shear_bias']:
+        config['shear_bias_section_name'] = options.get_string(option_section, 'shear_bias_section_name')
+
     config['nside'] = options.get_int(option_section, "nside")
 
     if not np.log2(float(config['nside'])).is_integer():
@@ -140,7 +145,27 @@ def execute(block, config):
     print('Making shear maps...')
     tic = time.time()
 
-    print(joint_fields)
+    bin_num = len(joint_fields[nbLensFields:])
+
+    if config['shear_bias']:
+        biases = block[config['shear_bias_section_name'], 'biases']
+        if 'mult' in biases:
+            m = np.array(block[config['shear_bias_section_name'], 'mult_bias_random_sample'])
+        else:
+            m = np.zeros(bin_num)
+
+        if 'add' in biases:
+            c1 = np.array(block[config['shear_bias_section_name'], 'add_bias_e1_random_sample'])
+            c2 = np.array(block[config['shear_bias_section_name'], 'add_bias_e2_random_sample'])
+        else:
+            c1, c2 = np.zeros(bin_num), np.zeros(bin_num)
+
+        if 'psf' in biases:
+            alpha1 =  np.array(block[config['shear_bias_section_name'], 'psf_bias_e1_random_sample'])
+            alpha2 =  np.array(block[config['shear_bias_section_name'], 'psf_bias_e2_random_sample'])
+            psf_map_names = np.array(str(block[config['shear_bias_section_name'], 'psf_ell_map_paths']).split(' '), dtype = str)
+        else:
+            alpha1, alpha2 = np.zeros(bin_num), np.zeros(bin_num)
 
     #Shear
     tomo = 0
@@ -154,9 +179,11 @@ def execute(block, config):
                 file = '{0}_{1}_sample{2}_type{3}.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], i)
                 print('  Reading {0}...'.format(file))
                 data = fits.getdata(file, 1)
+                
                 if config['clean']:
                     print('  Deleting {0} to save disk space...'.format(file))
                     os.remove(file)
+
                 map_shears(she, num, data.field(0),  data.field(1), data.field(5) + 1j * data.field(6), gal_wht=None)
                 del data
                 num_group.append(num)
@@ -168,23 +195,53 @@ def execute(block, config):
                     os.remove(file)
                 lens = True
                 pass
+
         if lens == False:
             print('  Joining the following sample types which are all within tomographic bin {1}: {0}'.format(group, tomo+1))
+
             if 'map' in config['out_mode']:
                 filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
                 print('    Saving consolidated count and shear fields for tomographic bin {0} as {1}...'.format(tomo+1, filename))
                 counts = np.add.reduce(num_group)
                 shear = np.add.reduce(shear_group)
-                save_fits(filename, [counts, shear.real, shear.imag])
+                if config['shear_bias']:
+                    print("   Including shear bias in maps...")
+                    if 'psf' in biases:
+                        print("     Also including PSF shear bias in maps...")
+                        psf_ell_e1 = hp.read_map(psf_map_names[0])
+                        psf_ell_e2 = hp.read_map(psf_map_names[1])
+                        save_fits(filename, [counts, (1+m[tomo])*shear.real + c1[tomo] + alpha1[tomo]*psf_ell_e1, (1+m[tomo])*shear.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2])
+                        del psf_ell_e1
+                        del psf_ell_e2
+                    else:
+                        save_fits(filename, [counts, (1+m[tomo])*shear.real + c1[tomo], (1+m[tomo])*shear.imag + c2[tomo]])
+                else:
+                    save_fits(filename, [counts, shear.real, shear.imag])
                 del counts
                 del shear
+
             if 'pcl' in config['out_mode']:
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 shear = np.add.reduce(shear_group)
                 print('  -----')
-                alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = 4096))
-                del shear
+                if config['shear_bias']:
+                    print("   Including shear bias in PCls...")
+                    if 'psf' in biases:
+                        print("     Also including PSF shear bias in PCls...")
+                        psf_ell_e1 = hp.read_map(psf_map_names[0])
+                        psf_ell_e2 = hp.read_map(psf_map_names[1])
+                        alm.append(hp.sphtfunc.map2alm_spin([(1+m[tomo])*shear.real + c1[tomo] + alpha1[tomo]*psf_ell_e1, (1+m[tomo])*shear.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2], spin = 2, lmax = config['lmax']))
+                        del psf_ell_e1
+                        del psf_ell_e2
+                    else:
+                        alm.append(hp.sphtfunc.map2alm_spin([(1+m[tomo])*shear.real + c1[tomo], (1+m[tomo])*shear.imag + c2[tomo]], spin = 2, lmax = config['lmax']))
+                else:
+                    alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax']))
+
+            del shear
+
             tomo += 1
+
     toc = time.time()
     if 'map' in config['out_mode'] and 'pcl' in config['out_mode'] :
         print('Making and saving shear maps plus computing their alms took {0} seconds'.format(round(toc-tic, 3)))
