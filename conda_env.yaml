@@ -13,3 +13,4 @@ dependencies:
     - healpy
     - interpcl
     - pyDOE
+    - numba

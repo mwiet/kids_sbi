@@ -45,8 +45,9 @@ This creates a `kids_sbi_env` environment that should have all the necessary dep
 
 We need to install CAMB because we use the new python interface for it. If `kcap` is to be used on a local machine, `pip install camb` is all there is to do. On a heterogenous cluster like `splinter` or `cuillin`, we need to build CAMB ourselves, however. To do so, run
 ```
+cd $MAIN_PATH
 git clone --recursive git@github.com:cmbant/CAMB.git
-cd CAMB
+cd $MAIN_PATH/CAMB
 python setup.py build_cluster
 python setup.py install
 ```
@@ -54,47 +55,56 @@ python setup.py install
 We also need to install GLASS:
 
 ```
-git clone https://github.com/glass-dev/glass.git
-# or clone via ssh: git clone git@github.com:glass-dev/glass.git
-cd glass
+cd $MAIN_PATH
+git clone https://github.com/glass-dev/glass.git $MAIN_PATH/glass
+cd $MAIN_PATH/glass
+git checkout -b kids_sbi_stable 9af4d02
+mv $MAIN_PATH/glass/lensing.py $MAIN_PATH/glass/lensing.py.bak
+cp $MAIN_PATH/kids_sbi/glass/lensing.py $MAIN_PATH/glass/lensing.py
 pip install -e .
 ```
 Cosmology dependency:
 ```
-git clone https://github.com/glass-dev/cosmology.git
-cd cosmology
+cd $MAIN_PATH
+git clone https://github.com/glass-dev/cosmology.git $MAIN_PATH/glass_cosmology
+cd $MAIN_PATH/glass_cosmology
+git checkout -b kids_sbi_stable 4c9052f
 pip install -e .
 ```
 CosmoSIS-GLASS interface:
 ```
-git clone https://github.com/mwiet/glass-cosmosis.git
-cd glass-cosmosis
+cd $MAIN_PATH
+git clone https://github.com/mwiet/glass-cosmosis.git $MAIN_PATH/glass-cosmosis
+cd $MAIN_PATH/glass-cosmosis
 pip install -e .
 ```
 
 Next, we have to install the nonLimber module:
 
 ```
-git clone https://github.com/rreischke/nonLimber_max.git
-cd nonLimber_max
+cd cd $MAIN_PATH
+git clone https://github.com/rreischke/nonLimber_matter_shells.git $MAIN_PATH/nonLimber_matter_shells
+cd $MAIN_PATH/nonLimber_matter_shells
 pip install .
 ```
 
 Finally, we also have to install [SALMO](https://github.com/Linc-tw/salmo):
 
 ```
-git clone https://github.com/Linc-tw/salmo.git
-cd salmo/build
+cd $MAIN_PATH
+git clone https://github.com/Linc-tw/salmo.git $MAIN_PATH/salmo
+cd $MAIN_PATH/salmo/build
 cmake ..
 make
 ```
 
-We can now build kcap (which installs a standalone version of CosmoSIS):
+We can now build kids_sbi (which installs a standalone version of CosmoSIS):
 ```
+cd $MAIN_PATH/kids_sbi
 python build.py
 ```
 
-To uninstall CosmoSIS (for example if you need to get the newest version), run `pip uninstall cosmosis_standalone`. To make a fresh installation of kcap, run `python build.py --clean`.
+To uninstall CosmoSIS (for example if you need to get the newest version), run `pip uninstall cosmosis_standalone`. To make a fresh installation of kids_sbi, run `python build.py --clean`.
 
 ### Installation on macOS and other details
 
