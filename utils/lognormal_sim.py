@@ -1,6 +1,7 @@
 from os import EX_SOFTWARE
 from numba import njit
 from cosmosis.datablock import option_section, names, BlockError
+from pathlib import Path
 import numpy as np
 from cosmology import LCDM
 import glass.sim
@@ -152,10 +153,10 @@ def execute(block, config):
                 counter += 1
             else:
                 try:
-                    os.mkdir(path)
+                    Path(path).mkdir(parents=True, exist_ok=True)
                     print('Creating {0}...'.format(path))
-                    os.mkdir('{0}/glass_denMap'.format(path))
-                    os.mkdir('{0}/glass_lenMap'.format(path))
+                    Path('{0}/glass_denMap'.format(path)).mkdir(parents=True, exist_ok=False)
+                    Path('{0}/glass_lenMap'.format(path)).mkdir(parents=True, exist_ok=False)
                     config['counter'] = counter
                     new_path = True
                 except:

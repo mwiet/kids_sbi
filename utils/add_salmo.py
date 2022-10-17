@@ -1,6 +1,7 @@
 #!python
 import numpy as np
 from cosmosis.datablock import names, option_section
+from pathlib import Path
 import subprocess as spc
 import warnings
 import shutil
@@ -227,6 +228,11 @@ def execute(block, config):
         block[config['out_name'], 'lenPrefix'] = '{0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
         block[config['out_name'], 'nbLensFields'] = config['nbLensFields']
         block[config['out_name'], 'nbSourceFields'] = config['nbSourceFields']
+        
+        if config['outPrefix'][-1] == "/": #make sure Salmo folder exists
+            Path(config['outPrefix']).mkdir(parents=True, exist_ok=True)
+        else:
+            Path("/".join(config['outPrefix'].split("/")[:-1])).mkdir(parents=True, exist_ok=True) 
 
         mp = np.array(config['maskPath'].split(' '), dtype = str)
         maskPath = ['maskPath="{0} {1}"'.format(i, mp[i]) for i in range(len(mp))]
