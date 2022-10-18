@@ -82,7 +82,7 @@ pip install -e .
 Next, we have to install the nonLimber module:
 
 ```
-cd cd $MAIN_PATH
+cd $MAIN_PATH
 git clone https://github.com/rreischke/nonLimber_matter_shells.git $MAIN_PATH/nonLimber_matter_shells
 cd $MAIN_PATH/nonLimber_matter_shells
 pip install .
@@ -111,17 +111,6 @@ To uninstall CosmoSIS (for example if you need to get the newest version), run `
 The default macOS compilers are supported now but `gfortran` still needs to be installed. This can be done with `homebrew` by running `brew install gcc`. Note that `gcc 9.2` seems to be incompatible with the `PolyChord` samplers included in cosmosis, so use a different version (e.g., 9.1).
 
 If no MPI support is required, run `python build.py --no-mpi`.
-
-### Install conda
-
-Get [miniconda](https://conda.io/en/master/miniconda.html). For example on a Linux machine: 
-```
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-chmod +x Miniconda3-latest-Linux-x86_64.sh
-./Miniconda3-latest-Linux-x86_64.sh
-```
-
-The installation will ask whether you want to add this conda installation to your `PATH` by adding some lines to your `.bashrc`. If you choose not to (for example because you don't want it to be the default installation), make sure the installation is accessible when building and running kcap.
 
 ## Usage
 
