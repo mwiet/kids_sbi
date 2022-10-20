@@ -58,12 +58,14 @@ def setup(options):
     config['ia'] = options.get_string(option_section, "ia")
 
     try:
-        config['seed'] = options.get_int(option_section, "seed")
-        config['rng'] = np.random.default_rng(config['seed'])
+        config['seed'] = int(options[option_section, "seed"])
     except:
         config['seed'] = None
         config['rng'] = None
-        
+    
+    if config['seed'] != None:
+        config['rng'] = np.random.default_rng(config['seed'])
+
     return config
 
 @njit(nogil=True)
