@@ -29,6 +29,12 @@ def setup(options):
         if len(np.array(str(config['psf_ell_map_paths']).split(' '), dtype = str)) != 2:
             raise Exception('To include the effect of the PSF on the shear bias, two healpix maps must be given: one for e1 and another for e2')
 
+    try:
+        config['bias_seed'] = int(options[option_section, "bias_seed"])
+        print('-- Setting a fixed seed for the shear bias with value: {0}'.format(config['bias_seed']))
+    except:
+        config['bias_seed'] = None
+
     return config
 
 def execute(block, config):
@@ -42,6 +48,7 @@ def execute(block, config):
         m_biases = np.zeros(len(config['mult_bias_mean']))
         for i in range(len(config['mult_bias_mean'])):
             print('Source bin {0} has a multiplicative shear bias of m = {1} ± {2}'.format(i+1, config['mult_bias_mean'][i], config['mult_bias_std'][i]))
+            np.random.seed(config['bias_seed'])
             m_biases[i] = float(np.random.normal(config['mult_bias_mean'][i], config['mult_bias_std'][i], 1))
             print(' Randomly sampled a multiplicative shear bias of m = {0}'.format(round(m_biases[i], 3)))
         block[config['section_name'], 'mult_bias_random_sample'] = m_biases
@@ -57,9 +64,11 @@ def execute(block, config):
         c_biases_e2 = np.zeros(len(config['add_bias_mean_e2']))
         for i in range(len(config['add_bias_mean_e1'])):
             print('Source bin {0} has an additive shear bias in e1 of c = {1} ± {2}'.format(i+1, config['add_bias_mean_e1'][i], config['add_bias_std_e1'][i]))
+            np.random.seed(config['bias_seed'])
             c_biases_e1[i] = float(np.random.normal(config['add_bias_mean_e1'][i], config['add_bias_std_e1'][i], 1))
             print(' Randomly sampled an additive shear bias in e1 of c = {0}'.format(round(c_biases_e1[i], 6)))
             print('Source bin {0} has an additive shear bias in e2 of c = {1} ± {2}'.format(i+1, config['add_bias_mean_e2'][i], config['add_bias_std_e2'][i]))
+            np.random.seed(config['bias_seed'])
             c_biases_e1[i] = float(np.random.normal(config['add_bias_mean_e2'][i], config['add_bias_std_e2'][i], 1))
             print(' Randomly sampled an additive shear bias in e2 of c = {0}'.format(round(c_biases_e1[i], 6)))
         block[config['section_name'], 'add_bias_e1_random_sample'] = c_biases_e1
@@ -77,9 +86,11 @@ def execute(block, config):
         psf_biases_e2 = np.zeros(len(config['psf_bias_mean_e2']))
         for i in range(len(config['psf_bias_mean_e1'])):
             print('Source bin {0} has a PSF shear bias factor in e1 of alpha = {1} ± {2}'.format(i+1, config['psf_bias_mean_e1'][i], config['psf_bias_std_e1'][i]))
+            np.random.seed(config['bias_seed'])
             psf_biases_e1[i] = float(np.random.normal(config['psf_bias_mean_e1'][i], config['psf_bias_std_e1'][i], 1))
             print(' Randomly sampled a PSF shear bias factor in e1 of alpha = {0}'.format(round(psf_biases_e1[i], 3)))
             print('Source bin {0} has a PSF shear bias factor in e2 of alpha = {1} ± {2}'.format(i+1, config['psf_bias_mean_e2'][i], config['psf_bias_std_e2'][i]))
+            np.random.seed(config['bias_seed'])
             psf_biases_e2[i] = float(np.random.normal(config['psf_bias_mean_e2'][i], config['psf_bias_std_e2'][i], 1))
             print(' Randomly sampled a PSF shear bias factor in e2 of alpha = {0}'.format(round(psf_biases_e2[i], 3)))
         block[config['section_name'], 'psf_bias_e1_random_sample'] = psf_biases_e1
