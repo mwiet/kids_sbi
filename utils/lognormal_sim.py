@@ -59,12 +59,9 @@ def setup(options):
 
     try:
         config['seed'] = int(options[option_section, "seed"])
+        print('-- Setting a fixed seed for Glass with value: {0}'.format(config['seed']))
     except:
         config['seed'] = None
-        config['rng'] = None
-    
-    if config['seed'] != None:
-        config['rng'] = np.random.default_rng(config['seed'])
 
     return config
 
@@ -188,17 +185,22 @@ def execute(block, config):
 
     if 'salmo' in config['out_mode']: #for variable depth
         print('Initialising simulation ...')
+        if config['seed'] != None:
+            rng = np.random.default_rng(config['seed'])
+        else:
+            rng = None
+
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear()]
         else:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear()]
         
@@ -221,7 +223,8 @@ def execute(block, config):
         block['glass', 'prefix'] = config['prefix']
         block['glass', 'runTag'] = config['runTag']
         block['glass', 'counter']  =  config['counter']
-        block['glass', 'seed']  =  config['seed']
+        if config['seed'] is not None:
+            block['glass', 'seed']  =  config['seed']
 
         for s in range(nshell):
             filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
@@ -246,13 +249,17 @@ def execute(block, config):
         n_arcmin2 = np.array([list(config['n_density'])]).T
         dndz *= n_arcmin2/np.trapz(dndz, z)[..., np.newaxis]
         
+        if config['seed'] != None:
+            rng = np.random.default_rng(config['seed'])
+        else:
+            rng = None
 
         print('Initialising simulation ...')
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear(),
@@ -263,7 +270,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['rng']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear(),
             glass.galaxies.gal_dist_uniform(z, dndz),
