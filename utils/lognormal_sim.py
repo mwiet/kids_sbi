@@ -183,12 +183,13 @@ def execute(block, config):
         for j in range(i+1):
             matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax_in, dipole=True, monopole=True))
 
+    if config['seed'] != None:
+        rng = np.random.default_rng(config['seed'])
+    else:
+        rng = None
+
     if 'salmo' in config['out_mode']: #for variable depth
         print('Initialising simulation ...')
-        if config['seed'] != None:
-            rng = np.random.default_rng(config['seed'])
-        else:
-            rng = None
 
         if 'nla' in config['ia']:
             generators = [
@@ -248,11 +249,6 @@ def execute(block, config):
             dndz.append(block['nz_source', 'bin_{0}'.format(i+1)])
         n_arcmin2 = np.array([list(config['n_density'])]).T
         dndz *= n_arcmin2/np.trapz(dndz, z)[..., np.newaxis]
-        
-        if config['seed'] != None:
-            rng = np.random.default_rng(config['seed'])
-        else:
-            rng = None
 
         print('Initialising simulation ...')
         if 'nla' in config['ia']:
