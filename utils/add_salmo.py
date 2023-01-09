@@ -1,6 +1,7 @@
 #!python
 import numpy as np
 from cosmosis.datablock import names, option_section
+from pathlib import Path
 import subprocess as spc
 import warnings
 import shutil
@@ -203,7 +204,9 @@ def execute(block, config):
     
     else:
         if config['source_shifts'] and config['doVariableDepth'] == '0':
-            config['nOfZPath'] = config['nOfZPath'] + ' ' + block['shift_nz', 'paths']
+            all_nOfZPath = config['nOfZPath'] + ' ' + block['shift_nz', 'paths']
+        else:
+            all_nOfZPath  = config['nOfZPath']
 
         block[config['out_name'], 'map_folder'] = block['glass', 'map_folder']
         block[config['out_name'], 'nside'] = block['glass', 'nside']
@@ -213,7 +216,7 @@ def execute(block, config):
         block[config['out_name'], 'seed'] = config['seed']
         block[config['out_name'], 'nbTypes'] = config['nbTypes']
         block[config['out_name'], 'maskPath'] = config['maskPath']
-        block[config['out_name'], 'nOfZPath'] = config['nOfZPath']
+        block[config['out_name'], 'nOfZPath'] = all_nOfZPath
         block[config['out_name'], 'n_gal'] = config['n_gal']
         block[config['out_name'], 'doNoise'] = config['doNoise']
         block[config['out_name'], 'doWgt'] = config['doWgt']
@@ -227,11 +230,16 @@ def execute(block, config):
         block[config['out_name'], 'lenPrefix'] = '{0}/{1}_sample{2}/glass_lenMap/{3}_lenMap'.format(block['glass', 'map_folder'], block['glass', 'runTag'], block['glass', 'counter'], block['glass', 'prefix'])
         block[config['out_name'], 'nbLensFields'] = config['nbLensFields']
         block[config['out_name'], 'nbSourceFields'] = config['nbSourceFields']
+        
+        if config['outPrefix'][-1] == "/": #make sure Salmo folder exists
+            Path(config['outPrefix']).mkdir(parents=True, exist_ok=True)
+        else:
+            Path("/".join(config['outPrefix'].split("/")[:-1])).mkdir(parents=True, exist_ok=True) 
 
         mp = np.array(config['maskPath'].split(' '), dtype = str)
         maskPath = ['maskPath="{0} {1}"'.format(i, mp[i]) for i in range(len(mp))]
 
-        nz = np.array(config['nOfZPath'].split(' '), dtype = str)
+        nz = np.array(all_nOfZPath.split(' '), dtype = str)
         nOfZPath = ['nOfZPath="{0} {1}"'.format(i, nz[i]) for i in range(len(nz))]
 
         print('Running SALMO with seed {0}...'.format(config['seed']))
@@ -257,9 +265,11 @@ def execute(block, config):
             ] + maskPath + nOfZPath, cwd=config['build_path'], text = True)
         else:
             if config['source_shifts']:
-                config['VD_nOfZPath'] = block['shift_nz', 'paths']
-                if len(np.array(config['VD_nOfZPath'].split(' '), dtype = str)) != int(config['nbTomo'])*int(config['N_depth']):
+                all_VD_nOfZPaths = block['shift_nz', 'paths']
+                if len(np.array(all_VD_nOfZPaths.split(' '), dtype = str)) != int(config['nbTomo'])*int(config['N_depth']):
                     raise Exception('VD_nOfZPath from shift_nz must have a length of nbTomo*N_depth')
+            else:
+                all_VD_nOfZPaths = config['VD_nOfZPath']
 
             block[config['out_name'], 'nbDepthMaps'] = config['nbDepthMaps']
             block[config['out_name'], 'depthMapPath'] = config['depthMapPath']
@@ -270,13 +280,13 @@ def execute(block, config):
             block[config['out_name'], 'b_n_gal'] = config['b_n_gal']
             block[config['out_name'], 'a_sigma_eps'] = config['a_sigma_eps']
             block[config['out_name'], 'b_sigma_eps'] = config['b_sigma_eps']
-            block[config['out_name'], 'VD_nOfZPath'] = config['VD_nOfZPath']
+            block[config['out_name'], 'VD_nOfZPath'] = all_VD_nOfZPaths
             block[config['out_name'], 'nbSourceFields_vd'] = config['nbSourceFields_vd']
 
             dm = np.array(config['depthMapPath'].split(' '), dtype = str)
             depthMapPath = ['depthMapPath="{0} {1}"'.format(i, dm[i]) for i in range(len(dm))]
 
-            vd = np.array(config['VD_nOfZPath'].split(' '), dtype = str)
+            vd = np.array(all_VD_nOfZPaths.split(' '), dtype = str)
             VD_nOfZPath = ['VD_nOfZPath="{0} {1}"'.format(i, vd[i]) for i in range(len(vd))]
 
             spc.run(['./salmo', 'default', '3', 'seed={0}'.format(config['seed']),

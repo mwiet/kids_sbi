@@ -1,6 +1,7 @@
 from os import EX_SOFTWARE
 from numba import njit
 from cosmosis.datablock import option_section, names, BlockError
+from pathlib import Path
 import numpy as np
 from cosmology import LCDM
 import glass.sim
@@ -55,12 +56,13 @@ def setup(options):
             raise Exception('Currently only support a single value of sigma_e for all bins.')
 
     config['ia'] = options.get_string(option_section, "ia")
-    
+
     try:
-        config['seed'] = opitions.get_int(option_section, "seed")
+        config['seed'] = int(options[option_section, "seed"])
+        print('-- Setting a fixed seed for Glass with value: {0}'.format(config['seed']))
     except:
         config['seed'] = None
-        
+
     return config
 
 @njit(nogil=True)
@@ -150,10 +152,10 @@ def execute(block, config):
                 counter += 1
             else:
                 try:
-                    os.mkdir(path, parents=True)
+                    Path(path).mkdir(parents=True, exist_ok=True)
                     print('Creating {0}...'.format(path))
-                    os.mkdir('{0}/glass_denMap'.format(path), parents=True)
-                    os.mkdir('{0}/glass_lenMap'.format(path), parents=True)
+                    Path('{0}/glass_denMap'.format(path)).mkdir(parents=True, exist_ok=False)
+                    Path('{0}/glass_lenMap'.format(path)).mkdir(parents=True, exist_ok=False)
                     config['counter'] = counter
                     new_path = True
                 except:
@@ -181,19 +183,25 @@ def execute(block, config):
         for j in range(i+1):
             matter_cl.append(interpcl(ell[:-1], block['matter_cl', 'bin_{0}_{1}'.format(i+1, j+1)][:-1], lmax=lmax_in, dipole=True, monopole=True))
 
+    if config['seed'] != None:
+        rng = np.random.default_rng(config['seed'])
+    else:
+        rng = None
+
     if 'salmo' in config['out_mode']: #for variable depth
         print('Initialising simulation ...')
+
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear()]
         else:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear()]
         
@@ -216,6 +224,8 @@ def execute(block, config):
         block['glass', 'prefix'] = config['prefix']
         block['glass', 'runTag'] = config['runTag']
         block['glass', 'counter']  =  config['counter']
+        if config['seed'] is not None:
+            block['glass', 'seed']  =  config['seed']
 
         for s in range(nshell):
             filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
@@ -225,7 +235,7 @@ def execute(block, config):
             save_fits(filename_denMap, delta[s])
             #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
             print('Saving {0}...'.format(filename_lenMap))
-            save_fits(filename_lenMap, [kappa[s], -1*gamma1[s], gamma2[s]])
+            save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
             #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
 
     else:
@@ -239,14 +249,13 @@ def execute(block, config):
             dndz.append(block['nz_source', 'bin_{0}'.format(i+1)])
         n_arcmin2 = np.array([list(config['n_density'])]).T
         dndz *= n_arcmin2/np.trapz(dndz, z)[..., np.newaxis]
-        
 
         print('Initialising simulation ...')
         if 'nla' in config['ia']:
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.ia_nla(cosmo, config['a_ia']),
             glass.lensing.shear(),
@@ -257,7 +266,7 @@ def execute(block, config):
             generators = [
             glass.cosmosis.file_matter_cls(np.array(matter_cl), np.array(redshift_shells)),
             glass.observations.vis_constant(config['mask'], config['mask_nside']),
-            glass.matter.lognormal_matter(config['nside'], rng = config['seed']),
+            glass.matter.lognormal_matter(config['nside'], rng = rng),
             glass.lensing.convergence(cosmo),
             glass.lensing.shear(),
             glass.galaxies.gal_dist_uniform(z, dndz),
