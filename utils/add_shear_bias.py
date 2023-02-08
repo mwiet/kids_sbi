@@ -75,7 +75,7 @@ def execute(block, config):
         block[config['section_name'], 'add_bias_e2_random_sample'] = c_biases_e2
 
     if 'psf' in config['biases']:
-        print('Including multiplicative shear bias...')
+        print('Including PSF shear bias...')
         
         block[config['section_name'], 'psf_bias_mean_e1'] = config['psf_bias_mean_e1']
         block[config['section_name'], 'psf_bias_mean_e2'] = config['psf_bias_mean_e2']
