@@ -6,6 +6,8 @@ def setup(options):
     config = {}
     config['where'] = options.get_string(option_section, "where") #only shear
 
+    config['fsky'] = options.get_float(option_section, "fsky") 
+
     config['vd'] =  options.get_bool(option_section, "vd")
 
     if config['vd']:
@@ -48,6 +50,7 @@ def execute(block, config):
         
         n_density = n_density*arcmin2_in_sphere/(4*np.pi)
         ell =  block[config['in_name'], 'ell']
+        factor = (1/2*fsky)*(1/ell)
         print("Calculating shot and shape noise...")
         counter = 0
         for i in range(nbin):
@@ -56,7 +59,7 @@ def execute(block, config):
                 if i == j:
                     with warnings.catch_warnings():
                         warnings.filterwarnings("ignore", category=RuntimeWarning)
-                        noise = (sigma_e[i]**2)/(2*n_density[i])
+                        noise = factor*(sigma_e[i]**2)/(2*n_density[i])
                     print('Removing ({0}^2)/(2*{1} arcmin^-2) of angular power in {2}-{2}'.format(round(sigma_e[i], 2), round(n_density[i]*4*np.pi/arcmin2_in_sphere, 2), i+1))
                 else:
                     noise = 0
