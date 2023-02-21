@@ -6,7 +6,7 @@ def setup(options):
     config = {}
     config['where'] = options.get_string(option_section, "where") #only shear
 
-    config['fsky'] = options.get_float(option_section, "fsky") 
+    config['fsky'] = options.get_double(option_section, "fsky") 
 
     config['vd'] =  options.get_bool(option_section, "vd")
 
