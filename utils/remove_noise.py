@@ -6,13 +6,7 @@ def setup(options):
     config = {}
     config['where'] = options.get_string(option_section, "where") #only shear
 
-    config['fsky'] = options.get_double(option_section, "fsky") 
-
-    config['vd'] =  options.get_bool(option_section, "vd")
-
-    if config['vd']:
-        config['n_density'] = options[option_section, "n_density"]
-        config['sigma_eps'] = options[option_section, "sigma_eps"] 
+    config['noise_file'] = options.get_string(option_section, "noise_file")
 
     config['in_name'] = options.get_string(option_section, 'in_name')
     config['out_name'] = options.get_string(option_section, 'out_name')
@@ -37,32 +31,21 @@ def execute(block, config):
             if len(index) != 0:
                 n_density = n_density[np.sort(index)]
                 sigma_e = sigma_e[np.sort(index)]
-            print('Found uniform shape and shot noise values...')
+            print('Found uniform shape and shot noise values. Assuming that provided noise file is compatible...')
         except:
             nbSourceFields = 0
             n_density = np.array([])
             sigma_e = np.array([])
-            print('No uniform shape and shot noise values found.')
+            print('No uniform shape and shot noise values found. Assuming that provided noise file is compatible...')
 
-        if config['vd']:
-            n_density = np.array(config['n_density'])
-            sigma_e = np.array(config['sigma_eps'])
-        
-        n_density = n_density*arcmin2_in_sphere/(4*np.pi)
+        shear_cl_noise = np.load(config['noise_file'])['arr_0']
         ell =  block[config['in_name'], 'ell']
-        factor = (1/2*fsky)*(1/ell)
-        print("Calculating shot and shape noise...")
+        print("Subtracting shot and shape noise...")
         counter = 0
         for i in range(nbin):
             for j in range(i+1):
                 shear_cl = block[config['in_name'], 'bin_{0}_{1}'.format(i+1, j+1)]
-                if i == j:
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings("ignore", category=RuntimeWarning)
-                        noise = factor*(sigma_e[i]**2)/(2*n_density[i])
-                    print('Removing ({0}^2)/(2*{1} arcmin^-2) of angular power in {2}-{2}'.format(round(sigma_e[i], 2), round(n_density[i]*4*np.pi/arcmin2_in_sphere, 2), i+1))
-                else:
-                    noise = 0
+                noise = shear_cl_noise[i][j][0:len(ell)]
                 shear_cl -= noise
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
                 block['{0}_noise'.format(config['out_name']), 'bin_{0}_{1}'.format(i+1,j+1)] = noise
