@@ -281,6 +281,8 @@ def execute(block, config):
                 print('  Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
                 pcls = hp.alm2cl([alm[i][0], alm[i][1]], [alm[j][0], alm[j][1]], lmax = int(config['lmax']))
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[0]
+                block[config['out_name'] + '_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[1]
+                block[config['out_name'] + '_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[2]
         toc = time.time()
         print('Calculating angular power spectra took {0} seconds'.format(round(toc-tic, 3)))
     return 0
