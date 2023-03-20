@@ -97,6 +97,8 @@ def setup(options):
 
     if config['shear_bias']:
         config['shear_bias_section_name'] = options.get_string(option_section, 'shear_bias_section_name')
+    
+    config['corrected_biases'] = options.get_string(option_section, 'corrected_biases')
 
     config['nside'] = options.get_int(option_section, "nside")
 
@@ -167,27 +169,32 @@ def execute(block, config):
         else:
             alpha1, alpha2 = np.zeros(bin_num), np.zeros(bin_num)
 
+        if 'mult' in biases:
+            m_corrected = np.array(block[config['shear_bias_section_name'], 'mult_bias_mean'])
+        else:
+            m_corrected = np.zeros(bin_num)
+
+
     #Shear
     tomo = 0
-    alm = []
+    alm, alm_rand = [], []
     for group in joint_fields:
-        shear_group, num_group = [], []
+        pos1_group, pos2_group, e_group = [], [], []
         for i in group:
             if i >= nbLensFields:
-                she = np.zeros(hp.nside2npix(nside), dtype=complex)
-                num = np.zeros_like(she, dtype=int)
                 file = '{0}_{1}_sample{2}_type{3}.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], i)
                 print('  Reading {0}...'.format(file))
                 data = fits.getdata(file, 1)
-                
+
                 if config['clean']:
                     print('  Deleting {0} to save disk space...'.format(file))
                     os.remove(file)
 
-                map_shears(she, num, data.field(0),  data.field(1), data.field(5) + 1j * data.field(6), gal_wht=None)
+                pos1_group.append(data.field(0))
+                pos2_group.append(data.field(1))
+                e_group.append(data.field(5) + 1j * data.field(6))
                 del data
-                num_group.append(num)
-                shear_group.append(she)
+
                 lens = False
             else:
                 if config['clean']:
@@ -199,46 +206,67 @@ def execute(block, config):
         if lens == False:
             print('  Joining the following sample types which are all within tomographic bin {1}: {0}'.format(group, tomo+1))
 
+            pos1_all = np.concatenate(pos1_group, axis =  None)
+            pos2_all = np.concatenate(pos2_group, axis =  None)
+            e_all = np.concatenate(e_group, axis =  None)
+
+            if config['shear_bias']:
+                print("   Including shear bias...")
+                if 'psf' in biases:
+                    print("     Also including PSF shear bias...")
+                    psf_ell_e1 = hp.read_map(psf_map_names[0])
+                    psf_ell_e2 = hp.read_map(psf_map_names[1])
+                    pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
+                    e_all = ((1+m[tomo])*e_all.real + c1[tomo] + alpha1[tomo]*psf_ell_e1[pix]) + 1j * (((1+m[tomo])/(1+m_corrected[tomo]))*e_all.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2[pix])
+                    del psf_ell_e1
+                    del psf_ell_e2
+                else:
+                    e_all = ((1+m[tomo])*e_all.real + c1[tomo]) + 1j * ((1+m[tomo])*e_all.imag + c2[tomo])
+            
+            if 'add' in config['corrected_biases']:
+                e_all = (e_all.real - np.mean(e_all.real)) + 1j * (e_all.imag - np.mean(e_all.imag))
+            
+            if 'mult' in config['corrected_biases']:
+                e_all *= 1/(1+m_corrected[tomo])
+
+            shear = np.zeros(hp.nside2npix(nside), dtype=complex)
+            counts = np.zeros_like(shear, dtype=int)
+
+            map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
+            shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
+
             if 'map' in config['out_mode']:
                 filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
                 print('    Saving consolidated count and shear fields for tomographic bin {0} as {1}...'.format(tomo+1, filename))
-                counts = np.add.reduce(num_group)
-                shear = np.add.reduce(shear_group)
-                if config['shear_bias']:
-                    print("   Including shear bias in maps...")
-                    if 'psf' in biases:
-                        print("     Also including PSF shear bias in maps...")
-                        psf_ell_e1 = hp.read_map(psf_map_names[0])
-                        psf_ell_e2 = hp.read_map(psf_map_names[1])
-                        save_fits(filename, [counts, (1+m[tomo])*shear.real + c1[tomo] + alpha1[tomo]*psf_ell_e1, (1+m[tomo])*shear.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2])
-                        del psf_ell_e1
-                        del psf_ell_e2
-                    else:
-                        save_fits(filename, [counts, (1+m[tomo])*shear.real + c1[tomo], (1+m[tomo])*shear.imag + c2[tomo]])
-                else:
-                    save_fits(filename, [counts, shear.real, shear.imag])
-                del counts
-                del shear
+                save_fits(filename, [counts, shear.real, shear.imag])
 
             if 'pcl' in config['out_mode']:
-                print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
-                shear = np.add.reduce(shear_group)
-                print('  -----')
-                if config['shear_bias']:
-                    print("   Including shear bias in PCls...")
-                    if 'psf' in biases:
-                        print("     Also including PSF shear bias in PCls...")
-                        psf_ell_e1 = hp.read_map(psf_map_names[0])
-                        psf_ell_e2 = hp.read_map(psf_map_names[1])
-                        alm.append(hp.sphtfunc.map2alm_spin([(1+m[tomo])*shear.real + c1[tomo] + alpha1[tomo]*psf_ell_e1, (1+m[tomo])*shear.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2], spin = 2, lmax = config['lmax']))
-                        del psf_ell_e1
-                        del psf_ell_e2
-                    else:
-                        alm.append(hp.sphtfunc.map2alm_spin([(1+m[tomo])*shear.real + c1[tomo], (1+m[tomo])*shear.imag + c2[tomo]], spin = 2, lmax = config['lmax']))
-                else:
-                    alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax']))
+                del counts
 
-            del shear
+                gal_num = len(pos1_all)
+                rand_theta = 2*np.pi*np.random.random_sample(gal_num)
+                
+                e1_corr = e_all.real*np.cos(rand_theta) - e_all.imag*np.sin(rand_theta)
+                e2_corr = e_all.imag*np.cos(rand_theta) + e_all.real*np.sin(rand_theta)
+                del e_all
+
+                rand = np.zeros(hp.nside2npix(nside), dtype=complex)
+                _ = np.zeros_like(rand, dtype=int)
+                                                            
+                map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
+                del e1_corr
+                del e2_corr
+                del pos1_all
+                del pos2_all
+                rand[_ > 0] = np.divide(rand[_ > 0], _[_ > 0])
+                del _
+
+                print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
+                print('  -----')
+                alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax']))
+                alm_rand.append(hp.sphtfunc.map2alm_spin([rand.real, rand.imag], spin = 2, lmax = config['lmax']))
+                del shear
+                del rand
 
             tomo += 1
 
@@ -278,11 +306,20 @@ def execute(block, config):
         tic = time.time()
         for i in range(tomo):
             for j in range(i+1):
-                print('  Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
-                pcls = hp.alm2cl([alm[i][0], alm[i][1]], [alm[j][0], alm[j][1]], lmax = int(config['lmax']))
+                print('     Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
+                pcls = hp.alm2cl(alm[i], alm[j], lmax = int(config['lmax']))
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[0]
                 block[config['out_name'] + '_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[1]
                 block[config['out_name'] + '_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[2]
+                del pcls
+
+                if i == j:
+                    pcls_rand = hp.alm2cl(alm_rand[i], alm_rand[j], lmax = int(config['lmax']))
+                    block[config['out_name'] + '_noise', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[0]
+                    block[config['out_name'] + '_noise_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[1]
+                    block[config['out_name'] + '_noise_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[2]
+                    del pcls_rand
+
         toc = time.time()
         print('Calculating angular power spectra took {0} seconds'.format(round(toc-tic, 3)))
     return 0

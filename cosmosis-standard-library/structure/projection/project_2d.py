@@ -165,8 +165,6 @@ class Spectrum(object):
         K1 = self.source.kernels_A[self.kernels[0] + "_" + self.sample_a][bin1]
         K2 = self.source.kernels_B[self.kernels[-1] + "_" + self.sample_b][bin2]
 
-        np.savez('npz/cosmosis_source_kernel_bin{0}.npz'.format(bin1), K1)
-
         #Call the integral
         c_ell = limber.limber(K1, K2, P, D, ell.astype(float), self.prefactor(block, bin1, bin2), 
             rel_tol=relative_tolerance, abs_tol=absolute_tolerance )
@@ -716,12 +714,6 @@ class SpectrumCalculator(object):
                     block[spectrum_name, "chi_peak_{}_{}".format(i + 1, j + 1)] = chi_peak
                     block[spectrum_name, "z_peak_{}_{}".format(i + 1, j + 1)] = z_peak
                     block[spectrum_name, "arcmin_per_Mpch_{}_{}".format(i + 1, j + 1)] = 60 * np.degrees(1 / chi_peak)
-        if spectrum_name == 'shear_cl':
-            np.savez('npz/shear_cl_limber', np.array(c_ells))
-        elif spectrum_name == 'galaxy_cl':
-            np.savez('npz/galaxy_cl_limber', np.array(c_ells))
-        elif spectrum_name == 'galaxy_shear_cl':
-            np.savez('npz/galaxy_shear_cl_limber', np.array(c_ells))
 
     def clean(self):
         # need to manually delete power spectra we have loaded
