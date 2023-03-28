@@ -50,7 +50,7 @@ def execute(block, config):
             for j in range(i+1):
                 shear_cl = block[config['in_name'], 'bin_{0}_{1}'.format(i+1, j+1)]
                 mm_sampling = np.load(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1))['arr_0']
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]* *2 * mm[l_min:l_max+1, l_min:l_max+1].dot(mm_sampling[l_min:l_max+1, l_min:l_max+1].dot(shear_cl[l_min:l_max+1]))
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm[l_min:l_max+1, l_min:l_max+1].dot(mm_sampling[l_min:l_max+1, l_min:l_max+1].dot(shear_cl[l_min:l_max+1]))
                 counter += 1
         
     else:

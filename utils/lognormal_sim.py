@@ -47,7 +47,7 @@ def setup(options):
         config['out_folder'] = options.get_string(option_section, "out_folder")
         config['prefix'] = options.get_string(option_section, "prefix")
         config['runTag'] = options.get_string(option_section, "runTag")
-        
+        Path(config['out_folder']).mkdir(parents=True,exist_ok=True)
     else:
         config['n_density']  = options[option_section, 'n_density']
         config['sigma_e']    = options[option_section, 'sigma_e']
@@ -141,27 +141,21 @@ def save_fits(name, map):
 def execute(block, config):
     
     #Create file paths for fits files
-    counter = 0
+    counter = np.random.randint(low=0, high=999999999)
+                                             
     new_path = False
+    path = '{0}/{1}_sample{2}'.format(config['out_folder'], config['runTag'], counter)
     while new_path is False:
+        try:
+            Path(path).mkdir(parents=False,exist_ok=False)
+            print('Creating {0}...'.format(path))
+            Path('{0}/glass_denMap'.format(path)).mkdir(exist_ok=False)
+            Path('{0}/glass_lenMap'.format(path)).mkdir(exist_ok=False)
+            config['counter'] = counter
+            new_path = True
+        except:
+            counter = np.random.randint(low=0, high=999999999)
             path = '{0}/{1}_sample{2}'.format(config['out_folder'], config['runTag'], counter)
-            num = np.random.randint(low=1, high=20)
-            time.sleep(0.001*num)
-            if os.path.exists(path) == True:
-                new_path = False
-                counter += 1
-            else:
-                try:
-                    Path(path).mkdir(parents=True, exist_ok=True)
-                    print('Creating {0}...'.format(path))
-                    Path('{0}/glass_denMap'.format(path)).mkdir(parents=True, exist_ok=False)
-                    Path('{0}/glass_lenMap'.format(path)).mkdir(parents=True, exist_ok=False)
-                    config['counter'] = counter
-                    new_path = True
-                except:
-                    new_path = False
-                    counter += 1
-
 
     #Setting up cosmology for the convergence map
     config["h0"]            = block[names.cosmological_parameters, "h0"]
