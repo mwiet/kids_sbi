@@ -11,6 +11,8 @@ def setup(options):
 
     config['nside'] = options.get_int(option_section, "nside")
 
+    config['l_max'] = options.get_int(option_section, "l_max")
+
     config['in_name'] = options.get_string(option_section, 'in_name')
     config['out_name'] = options.get_string(option_section, 'out_name')
 
@@ -21,13 +23,13 @@ def setup(options):
 
 def execute(block, config):
     if config['out'] == 'shear':
-        print('Reading in shear mixing matrix: {0}'.format(config['mm']))
+        print('Reading in shear mixing matrix from the mask: {0}'.format(config['mm_mask']))
         mm = np.load(config['mm_mask'])['arr_0']
         nbin = block[config['in_name'], 'nbin']
 
         ell = block[config['in_name'], 'ell']
         l_min = int(round(np.min(ell), 0))
-        l_max = int(round(np.max(ell), 0))
+        l_max = config['l_max'] 
            
         block[config['out_name'], "is_auto"] = 'True'
         block[config['out_name'], "sample_a"] = 'source'
@@ -43,8 +45,9 @@ def execute(block, config):
         for i in range(nbin):
             for j in range(i+1):
                 shear_cl = block[config['in_name'], 'bin_{0}_{1}'.format(i+1, j+1)]
-                cl_interp = interp1d(ell, shear_cl)
+                cl_interp = interp1d(ell, shear_cl, fill_value = "extrapolate") #Will only extrapolate to the nearest integer ell
                 cl = cl_interp(np.arange(l_min, l_max+1))
+                print('     Reading in shear mixing matrix to account for sampling: {0}'.format(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1)))
                 mm_sampling = np.load(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1))['arr_0']
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm[l_min:l_max+1, l_min:l_max+1].dot(mm_sampling[l_min:l_max+1, l_min:l_max+1].dot(cl))
                 counter += 1
