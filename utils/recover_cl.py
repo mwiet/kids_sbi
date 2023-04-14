@@ -38,7 +38,7 @@ def execute(block, config):
         block[config['out_name'], "nbin"] = nbin
         block[config['out_name'], "nbin_a"] = nbin
         block[config['out_name'], "nbin_b"] = nbin
-        block[config['out_name'], "ell"] = ell
+        block[config['out_name'], "ell"] = np.arange(l_min,l_max+1)
         
         _, pixel_window = hp.pixwin(config['nside'], lmax=l_max, pol=True)
 
