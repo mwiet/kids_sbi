@@ -37,6 +37,7 @@ def execute(block, config):
                 bin_ij = f"bin_{i+1}_{j+1}"
                 block[galaxy_shear, bin_ij] += block[magnification_shear, bin_ij]
 
-
-
     return 0
+
+def cleanup(config):
+    pass

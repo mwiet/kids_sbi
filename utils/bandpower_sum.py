@@ -40,8 +40,8 @@ def execute(block, config):
 
     if np.all((ell_new[1:] - ell_new[:-1]) == 1.0):
         print('Given Cls are calculated at interger values of ell already.')
-    else:
-        raise Exception('Given Cls are NOT calculated at interger values of ell.')
+    # else:
+    #     raise Exception('Given Cls are NOT calculated at interger values of ell.')
 
     # Read the number of bands
     num_bands = config['num_bands']
@@ -68,9 +68,5 @@ def execute(block, config):
 
     return 0
 
-# def clean(config):
-#     likelihood_type, n_dim, parameter_section, mu_section, likelihood_name, counter = config
-#     print(f"Ran likelihood {counter[0]} times.", flush=True)
-
-
-
+def cleanup(config):
+    pass
