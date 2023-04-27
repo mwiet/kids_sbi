@@ -22,6 +22,10 @@ def setup(options):
     config = {}
     
     config['nside'] = options.get_int(option_section, "nside")
+    config['nside_out'] = options.get_int(option_section, "nside_out")
+
+    if config['nside_out'] < config['nside']:
+        raise Warning('Are you sure that you want to downgrade the resolution of the maps?')
 
     if not np.log2(float(config['nside'])).is_integer():
         raise Exception('nside must be a power of 2.')
@@ -225,12 +229,19 @@ def execute(block, config):
             filename_denMap = '{0}/{3}_sample{1}/glass_denMap/{2}_denMap_{3}_sample{4}_f1z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
             filename_lenMap = '{0}/{3}_sample{1}/glass_lenMap/{2}_lenMap_{3}_sample{4}_f2z{5}.fits'.format(config['out_folder'], config['counter'], config['prefix'], config['runTag'], config['counter'], s+1)
             
-            print('Saving {0}...'.format(filename_denMap))
-            save_fits(filename_denMap, delta[s])
-            #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
-            print('Saving {0}...'.format(filename_lenMap))
-            save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
-            #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
+            if config['nside_out'] != config['nside']:
+                print('Saving {0}...'.format(filename_denMap))
+                save_fits(filename_denMap, hp.ud_grade(delta[s], config['nside_out']))
+                print('Saving {0}...'.format(filename_lenMap))
+                save_fits(filename_lenMap, [hp.ud_grade(kappa[s], config['nside_out']), hp.ud_grade(gamma1[s], config['nside_out']), hp.ud_grade(gamma2[s], config['nside_out'])])
+
+            else:
+                print('Saving {0}...'.format(filename_denMap))
+                save_fits(filename_denMap, delta[s])
+                #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
+                print('Saving {0}...'.format(filename_lenMap))
+                save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
+                #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
 
     else:
         #No variable depth, so we can go directly to catalogues, maps or pseudo-Cls
