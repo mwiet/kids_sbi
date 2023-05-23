@@ -32,6 +32,8 @@ def setup(options):
         config['theta_rebin_range'] = options[option_section,  'theta_bin_range'].astype(str) #e.g. "9 0.1 300" for 9 bins between theta of 0.1 and 300
         config['theta_rebin_range'][0] = config['theta_rebin_range'][0][:-2]
         config['theta_rebin_range']  = ' '.join(config['theta_rebin_range'])
+    
+    config['theta_rebin_range_cosebis'] = options[option_section,  'theta_rebin_range_cosebis'].astype(str) 
 
     config['out_path'] = options.get_string(option_section, 'out_path') #"/share/data1/maxivonw/kcap_out/treecorr"
 
@@ -110,6 +112,40 @@ def execute(block, config):
                         ], cwd=config['build_path'], text = True)
         toc = time.time()
         print('Rebining patch {0} took {1} seconds'.format(patch, round(toc-tic, 2)))
+
+    # print('Getting cosmic shear bandpowers, Pkk, for {0} patch(es)...'.format(patch))
+    # tic = time.time()
+    # for i in range(config['n_tomo']):
+    #         for j in range(i+1):
+    #             spc.run(['./doall_calc2pt.sh',
+    #                 '-m', 'Pkk',
+    #                 '-u', "{0} {1} {1}".format(config['mockname'], runid),
+    #                 '-o', config['out_path'],
+    #                 '-p', 'ALL',
+    #                 '-t', config['theta_bin_range'],
+    #                 '-n', config['tomo_bin_limits'],
+    #                 '-i', str(i+1),
+    #                 '-j', str(j+1)
+    #                 ], cwd=config['build_path'], text = True)
+    # toc = time.time()
+    # print('Getting cosmic shear bandpowers, Pkk, for patch {0} took {1} seconds'.format(patch, round(toc-tic, 2)))
+
+    # print('Getting cosmic shear COSEBIS for {0} patch(es)...'.format(patch))
+    # tic = time.time()
+    # for i in range(config['n_tomo']):
+    #         for j in range(i+1):
+    #             spc.run(['./doall_calc2pt.sh',
+    #                 '-m', 'COSEBIS',
+    #                 '-u', "{0} {1} {1}".format(config['mockname'], runid),
+    #                 '-o', config['out_path'],
+    #                 '-p', 'ALL',
+    #                 '-t', config['theta_bin_range'],
+    #                 '-n', config['tomo_bin_limits'],
+    #                 '-i', str(i+1),
+    #                 '-j', str(j+1)
+    #                 ], cwd=config['build_path'], text = True)
+    # toc = time.time()
+    # print('Getting cosmic shear COSEBIS for patch {0} took {1} seconds'.format(patch, round(toc-tic, 2)))
 
     if config['clean']:
         print('Deleting input files from SALMO for sample {0} of run {1}...'.format(block[config['in_name'], 'counter'], block[config['in_name'], 'runTag']))

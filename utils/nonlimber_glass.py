@@ -63,9 +63,15 @@ def execute(block, config):
 
     z_interp    = interp1d(chi_distance, z_distance, bounds_error = False, fill_value = "extrapolate")
 
-    z_pk    = block[names.matter_power_nl, "z"]
-    k_pk    = block[names.matter_power_nl, "k_h"]*config["h0"]
-    p_k     = block[names.matter_power_nl, "p_k"]/config["h0"]**3
+    try:
+        z_pk    = block[names.matter_power_nl, "z"]
+        k_pk    = block[names.matter_power_nl, "k_h"]*config["h0"]
+        p_k     = block[names.matter_power_nl, "p_k"]/config["h0"]**3
+    except:
+        print('Could not find non-Linear matter power spectrum. Using linear power spectrum instead...')
+        z_pk    = block[names.matter_power_lin, "z"]
+        k_pk    = block[names.matter_power_lin, "k_h"]*config["h0"]
+        p_k     = block[names.matter_power_lin, "p_k"]/config["h0"]**3
 
     power_spectrum = p_k.flatten()
 
