@@ -7,6 +7,7 @@ def setup(options):
     config['where'] = options.get_string(option_section, "where") #only shear
 
     config['in_name'] = options.get_string(option_section, 'in_name')
+    config['min_ell_noise'] = options.get_int(option_section, 'min_ell_noise')
     config['out_name'] = options.get_string(option_section, 'out_name')
     return config
 
@@ -23,7 +24,7 @@ def execute(block, config):
 
                 if i == j:
                     noise = block[config['in_name'] + '_noise', 'bin_{0}_{1}'.format(i+1, j+1)]
-                    shear_cl -= np.mean(noise)
+                    shear_cl -= np.average(noise[config['min_ell_noise']:], weight = (2*ell[config['min_ell_noise']:]) + 1)
                 
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
                 counter += 1
