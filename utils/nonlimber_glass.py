@@ -27,9 +27,33 @@ def setup(options):
     config["ell_nonlimber"]   = options.get_int(option_section, "ell_nonlimber")
     config["n_ell"]     = options.get_int(option_section, "n_ell")
 
+    try:
+        config["max_number_subintervals"] = options.get_int(option_section, "max_number_subintervals")
+    except:
+        config["max_number_subintervals"] = 20
+
+    try:
+        config["N_nonlimber"] = options.get_int(option_section, "N_nonlimber")
+    except:
+        config["N_nonlimber"] = 40
+
+    try:
+        config["N_limber"] = options.get_int(option_section, "N_limber")
+    except:
+        config["N_limber"] = 100
+
+    try:
+        config["Ninterp"] = options.get_int(option_section, "Ninterp")
+    except:
+        config["Ninterp"] = 600
+
+
     config["shell_input"] = options.get_string(option_section, "shell_input") #Should always be "shell_matter"
     
-    config["output_section"] = 'matter_cl'
+    try:
+        config["output_section"] = options.get_string(option_section, "output_section")
+    except:
+        config["output_section"] = 'matter_cl'
     
     return config
 
@@ -97,8 +121,8 @@ def execute(block, config):
                             k_pk = k_pk, z_pk = z_pk, pk = power_spectrum, boxy = True)
 
     lp.set_parameters(ELL_limber = config["ell_limber"], ELL_nonlimber = config["ell_nonlimber"], 
-                    max_number_subintervals =20, minell = int(config["ell_min"]), maxell = int(config["ell_max"]),
-                    N_nonlimber = 40, N_limber = 100, Ninterp = 600)
+                    max_number_subintervals = config["max_number_subintervals"], minell = int(config["ell_min"]), maxell = int(config["ell_max"]),
+                    N_nonlimber = config["N_nonlimber"], N_limber = config["N_limber"], Ninterp = config["Ninterp"])
 
 
     print('Computing angular power spectra...')
@@ -106,15 +130,15 @@ def execute(block, config):
 
     Cl_gg = np.array(Cl_gg)
 
-    block["matter_cl", "is_auto"] = 'True'
-    block["matter_cl", "sample_a"] = 'matter'
-    block["matter_cl", "sample_b"] = 'matter'
-    block["matter_cl", "nbin"] = number_count
-    block["matter_cl", "nbin_a"] = number_count
-    block["matter_cl", "nbin_b"] = number_count
-    block["matter_cl", "sep_name"] = "ell"
-    block["matter_cl", "save_name"] = ""
-    block["matter_cl", "ell"] = ell
+    block[config["output_section"], "is_auto"] = 'True'
+    block[config["output_section"], "sample_a"] = 'matter'
+    block[config["output_section"], "sample_b"] = 'matter'
+    block[config["output_section"], "nbin"] = number_count
+    block[config["output_section"], "nbin_a"] = number_count
+    block[config["output_section"], "nbin_b"] = number_count
+    block[config["output_section"], "sep_name"] = "ell"
+    block[config["output_section"], "save_name"] = ""
+    block[config["output_section"], "ell"] = ell
 
     idx_ls = np.array([[i, j] for i in range(0, number_count) for j in range(0, i+1)]) #Generates bin permutations such that i>=j
     idx_sl = np.array([[i, j+i] for i in range(0, number_count) for j in range(0, number_count-i)]) #Generates bin permuatations such that i<=j
@@ -126,7 +150,7 @@ def execute(block, config):
     for i in range(0, number_count):
         for j in range(0, i+1):
             c_ell = Cl_gg_reordered[counter]
-            block["matter_cl", 'bin_{0}_{1}'.format(i+1,j+1)] = c_ell
+            block[config["output_section"], 'bin_{0}_{1}'.format(i+1,j+1)] = c_ell
             counter += 1
     return 0
 
