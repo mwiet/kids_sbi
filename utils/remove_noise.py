@@ -7,7 +7,7 @@ def setup(options):
     config['where'] = options.get_string(option_section, "where") #only shear
 
     config['in_name'] = options.get_string(option_section, 'in_name')
-    config['min_ell_noise'] = options.get_string(option_section, 'min_ell_noise')
+    config['min_ell_noise'] = options.get_int(option_section, 'min_ell_noise')
     config['out_name'] = options.get_string(option_section, 'out_name')
     return config
 
