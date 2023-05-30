@@ -66,5 +66,6 @@ def execute(block, config):
 
     return 0
 
-def clean(config):
-    pass
+# def clean(config):
+#     likelihood_type, n_dim, parameter_section, mu_section, likelihood_name, counter = config
+#     print(f"Ran likelihood {counter[0]} times.", flush=True)
