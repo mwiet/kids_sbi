@@ -24,7 +24,7 @@ def execute(block, config):
 
                 if i == j:
                     noise = block[config['in_name'] + '_noise', 'bin_{0}_{1}'.format(i+1, j+1)]
-                    shear_cl -= np.average(noise[config['min_ell_noise']:], weight = (2*ell[config['min_ell_noise']:]) + 1)
+                    shear_cl -= np.average(noise[config['min_ell_noise']:], weights = (2*ell[config['min_ell_noise']:]) + 1)
                 
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
                 counter += 1
