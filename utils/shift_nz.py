@@ -6,8 +6,8 @@ from scipy.interpolate import interp1d
 
 def setup(options):
     config = {}
-    config['doVariableDepth'] =   str(options[option_section,  'doVariableDepth'])
-    if config['doVariableDepth'] not in ['0', '1']:
+    config['doVariableDepth_nz'] =   str(options[option_section,  'doVariableDepth'])
+    if config['doVariableDepth_nz'] not in ['0', '1']:
         raise Exception('doVariableDepth must be either 0 or 1: 0 = no, 1 = yes')
 
     config['nOfZPath'] = options.get_string(option_section, 'nOfZPath')
@@ -18,7 +18,7 @@ def setup(options):
 
     config['nbTomo'] = options.get_int(option_section, 'nbTomo')
 
-    if config['doVariableDepth'] == '1':
+    if config['doVariableDepth_nz'] == '1':
         config['N_depth'] = options.get_int(option_section, 'N_depth')
 
     else: 
@@ -32,7 +32,7 @@ def execute(block, config):
     nz = np.array(config['nOfZPath'].split(' '), dtype = str)
 
     new_files = []
-    if config['doVariableDepth'] == '0':
+    if config['doVariableDepth_nz'] == '0':
         _, index = np.unique(nz, return_index=True)
         nz_unique = nz[np.sort(index)]
         mapping = {}

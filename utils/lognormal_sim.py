@@ -168,6 +168,9 @@ def execute(block, config):
     config["omega_lambda"]  = block[names.cosmological_parameters, "omega_lambda"]
     config['a_ia']          = block[names.intrinsic_alignment_parameters, "a"]
 
+    print('Initialising cosmology within GLASS using:')
+    print('   h = {0}, Omega_m = {1}, Omega_k = {2}, Omega_lambda = {3}'.format(config['h0'], config['omega_m'], config['omega_k'], config['omega_lambda']))
+
     cosmo = LCDM(h=config['h0'], Om = config['omega_m'], Ol = config['omega_lambda'], Ok = config['omega_k'])
     
     #Reading pre-computed Cls

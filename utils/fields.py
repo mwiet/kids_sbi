@@ -108,6 +108,11 @@ def setup(options):
     if 'pcl' in config['out_mode']:
         config['lmax'] = options.get_int(option_section, "lmax")
 
+    config['doVariableDepth_in'] = options.get_bool(option_section, 'doVariableDepth')
+
+    if config['doVariableDepth_in'] == True:
+        config['weight_maps'] = options.get_string(option_section, 'weight_maps')
+
     config['clean']       = options[option_section,  "clean"]
 
     if type(config['clean']) != bool:
@@ -137,6 +142,7 @@ def execute(block, config):
     if str(vd) == '1':
         ndepth = block[config['in_name'], 'nbDepthMaps']
         ntomo = block[config['in_name'], 'nbTomo']
+        weight_map_names = np.array(config['weight_maps'].split(' '), dtype = str)
         for i in range(int(ntomo)):
             joint_fields.append(np.array([nbLensFields + nbSourceFields + n + int(ndepth)*i for n in range(int(ndepth))]))
 
@@ -220,6 +226,7 @@ def execute(block, config):
                     e_all = ((1+m[tomo])*e_all.real + c1[tomo] + alpha1[tomo]*psf_ell_e1[pix]) + 1j * (((1+m[tomo])/(1+m_corrected[tomo]))*e_all.imag + c2[tomo] + alpha2[tomo]*psf_ell_e2[pix])
                     del psf_ell_e1
                     del psf_ell_e2
+                    del pix
                 else:
                     e_all = ((1+m[tomo])*e_all.real + c1[tomo]) + 1j * ((1+m[tomo])*e_all.imag + c2[tomo])
             
@@ -232,7 +239,18 @@ def execute(block, config):
             shear = np.zeros(hp.nside2npix(nside), dtype=complex)
             counts = np.zeros_like(shear, dtype=int)
 
-            map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
+            if config['doVariableDepth_in']:
+                pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
+                weight_maps = []
+                for nb in range(int(ndepth)):
+                    weight_maps.append(hp.read_map(weight_map_names[nb]))
+                print('     Weighting shear values according to mask weights...')
+                weight_maps = np.sum(weight_maps, axis = 0)
+                map_shears(shear, counts, pos1_all,  pos2_all, e_all*weight_maps[pix], gal_wht=None)
+                counts = counts*weight_maps
+            else:
+                map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
+
             shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
 
             if 'map' in config['out_mode']:
@@ -252,8 +270,14 @@ def execute(block, config):
 
                 rand = np.zeros(hp.nside2npix(nside), dtype=complex)
                 _ = np.zeros_like(rand, dtype=int)
-                                                            
-                map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
+
+                if config['doVariableDepth_in']:
+                    map_shears(rand, _, pos1_all, pos2_all,  (e1_corr + 1j * e2_corr)*weight_maps[pix], gal_wht=None)
+                    _ = _*weight_maps
+                    del weight_maps
+                    del pix
+                else:                             
+                    map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
                 del e1_corr
                 del e2_corr
                 del pos1_all
