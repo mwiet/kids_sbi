@@ -252,8 +252,10 @@ def execute(block, config):
             'denPrefix={0}'.format(block[config['out_name'], 'denPrefix']),
             'lenPrefix={0}'.format(block[config['out_name'], 'lenPrefix']),
             'runTag=_{0}_sample{1}'.format(block['glass', 'runTag'], block['glass', 'counter']),
-            'nbTypes={0}'.format(config['nbTypes']),
-            'n_gal={0}'.format(str(config['n_gal'])[1:-1]),
+            'nbTypes={0}'.format(config['nbTypes'])]
+            + maskPath
+            + nOfZPath
+            + ['n_gal={0}'.format(str(config['n_gal'])[1:-1]),
             'doNoise={0}'.format(config['doNoise']),
             'doWgt={0}'.format(config['doWgt']),
             'signConv={0}'.format(config['signConv']),
@@ -262,7 +264,7 @@ def execute(block, config):
             'outPrefix={0}'.format(config['outPrefix']),
             'outStyle={0}'.format(config['outStyle']),
             'doVariableDepth={0}'.format(config['doVariableDepth'])
-            ] + maskPath + nOfZPath, cwd=config['build_path'], text = True)
+            ], cwd=config['build_path'], text = True)
         else:
             if config['source_shifts']:
                 all_VD_nOfZPaths = block['shift_nz', 'paths']
@@ -296,8 +298,10 @@ def execute(block, config):
             'denPrefix={0}'.format(block[config['out_name'], 'denPrefix']),
             'lenPrefix={0}'.format(block[config['out_name'], 'lenPrefix']),
             'runTag=_{0}_sample{1}'.format(block['glass', 'runTag'], block['glass', 'counter']),
-            'nbTypes={0}'.format(config['nbTypes']),
-            'n_gal={0}'.format(str(config['n_gal'])[1:-1]),
+            'nbTypes={0}'.format(config['nbTypes'])]
+            + maskPath
+            + nOfZPath
+            + ['n_gal={0}'.format(str(config['n_gal'])[1:-1]),
             'doNoise={0}'.format(config['doNoise']),
             'doWgt={0}'.format(config['doWgt']),
             'signConv={0}'.format(config['signConv']),
@@ -306,15 +310,16 @@ def execute(block, config):
             'outPrefix={0}'.format(config['outPrefix']),
             'outStyle={0}'.format(config['outStyle']),
             'doVariableDepth={0}'.format(config['doVariableDepth']),
-            'nbDepthMaps={0}'.format(config['nbDepthMaps']),
-            'N_depth={0}'.format(config['N_depth']),
+            'nbDepthMaps={0}'.format(config['nbDepthMaps'])]
+            + depthMapPath
+            + ['N_depth={0}'.format(config['N_depth']),
             'bin_depth={0}'.format(str(config['bin_depth'])[1:-1]),
             'nbTomo={0}'.format(config['nbTomo']),
             'a_n_gal={0}'.format(str(config['a_n_gal'])[1:-1]),
             'b_n_gal={0}'.format(str(config['b_n_gal'])[1:-1]),
             'a_sigma_eps={0}'.format(str(config['a_sigma_eps'])[1:-1]),
             'b_sigma_eps={0}'.format(str(config['b_sigma_eps'])[1:-1])
-            ] + maskPath + nOfZPath + depthMapPath + VD_nOfZPath, cwd=config['build_path'], text = True)
+            ] + VD_nOfZPath, cwd=config['build_path'], text = True)
 
     if config['clean']:
         print('Deleting input files from GLASS for sample {0}...'.format(block['glass', 'counter']))
