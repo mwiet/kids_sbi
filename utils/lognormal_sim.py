@@ -241,10 +241,8 @@ def execute(block, config):
             else:
                 print('Saving {0}...'.format(filename_denMap))
                 save_fits(filename_denMap, delta[s])
-                #hp.write_map(filename_denMap, m = delta[s], dtype=np.float32, nest=False, fits_IDL = True, overwrite=True)
                 print('Saving {0}...'.format(filename_lenMap))
                 save_fits(filename_lenMap, [kappa[s], gamma1[s], gamma2[s]])
-                #hp.write_map(filename_lenMap, m = [kappa[s], gamma1[s], gamma2[s]], dtype=[np.float32, np.float32, np.float32], nest=False, fits_IDL = True, overwrite=True)
 
     else:
         #No variable depth, so we can go directly to catalogues, maps or pseudo-Cls
