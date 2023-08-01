@@ -3,8 +3,8 @@
 # Kilo-Degree Survey - Simulation-Based Inference
 
 This repository supports running a simulation-based/likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the CosmoSIS and GLASS frameworks that was used in the following analyses:
-- Likelihood-free inference: Lin et al. in prep.
 - Forward simulations: von Wietersheim-Kramsta et al. in prep.
+- Likelihood-free inference: [Lin et al. 2022](https://arxiv.org/abs/2212.04521)
 
 This repository contains the cosmology inference pipeline that was used in the KiDS-1000 analyses:
  - Methodology: [Joachimi, Lin, Asgari, Tröster, Heymans et al. 2021](https://arxiv.org/abs/2007.01844)
@@ -16,7 +16,7 @@ The repository is based on the master branch of KCAP module which can be found [
 
 The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket.org/tilmantroester/cosmosis/src/kcap/) that is `pip`-installable and doesn't rely on environmental variables.
 
-The KiDS-SBI repository integrates the Generator for Large Scale Structure environment (Tessore et al. in prep.), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
+The KiDS-SBI repository integrates the Generator for Large Scale Structure environment ([Tessore et al. 2023](https://arxiv.org/abs/2302.01942)), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
 
 In addition, the KiDS-SBI implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module (Reischke et al. in prep.). This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
 
