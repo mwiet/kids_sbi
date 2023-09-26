@@ -254,7 +254,7 @@ def execute(block, config):
                     weight_maps.append(hp.read_map(weight_map_names[nb]))
                 print('     Weighting shear values according to mask weights...')
                 weight_maps = np.sum(weight_maps, axis = 0)
-                map_shears(shear, counts, pos1_all,  pos2_all, e_all*weight_maps[pix], gal_wht=None)
+                map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
                 counts = counts*weight_maps
             else:
                 map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
