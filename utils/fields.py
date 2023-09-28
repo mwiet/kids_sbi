@@ -283,7 +283,7 @@ def execute(block, config):
                 _ = np.zeros_like(rand, dtype=int)
 
                 if config['doVariableDepth_in']:
-                    map_shears(rand, _, pos1_all, pos2_all,  (e1_corr + 1j * e2_corr)*weight_maps[pix], gal_wht=None)
+                    map_shears(rand, _, pos1_all, pos2_all,  (e1_corr + 1j * e2_corr), gal_wht=None)
                     _ = _*weight_maps
                     del weight_maps
                     del pix
