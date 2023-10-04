@@ -110,8 +110,7 @@ def setup(options):
 
     config['doVariableDepth_in'] = options.get_bool(option_section, 'doVariableDepth')
 
-    if config['doVariableDepth_in'] == True:
-        config['weight_maps'] = options.get_string(option_section, 'weight_maps')
+    config['weight_maps'] = options.get_string(option_section, 'weight_maps')
 
     config['clean']       = options[option_section,  "clean"]
 
@@ -131,7 +130,10 @@ def execute(block, config):
     nbSourceFields = block[config['in_name'], 'nbSourceFields']
 
     nz = np.array(str(block[config['in_name'], 'nOfZPath']).split(' '), dtype = str)
-
+    
+    weight_map_names = np.array(config['weight_maps'].split(' '), dtype = str)
+    
+    #Map fields which are based on the same n(z)
     mapping = {}
     _, index = np.unique(nz, return_index=True)
     for i in nz[np.sort(index)]:
@@ -139,10 +141,9 @@ def execute(block, config):
 
     joint_fields = list(mapping.values())   
 
-    if str(vd) == '1':
+    if str(vd) == '1': #If vd, then the shear maps are split into depth bins
         ndepth = block[config['in_name'], 'nbDepthMaps']
         ntomo = block[config['in_name'], 'nbTomo']
-        weight_map_names = np.array(config['weight_maps'].split(' '), dtype = str)
         for i in range(int(ntomo)):
             joint_fields.append(np.array([nbLensFields + nbSourceFields + n + int(ndepth)*i for n in range(int(ndepth))]))
 
@@ -153,7 +154,9 @@ def execute(block, config):
     print('Making shear maps...')
     tic = time.time()
 
-    bin_num = len(joint_fields[nbLensFields:])
+    bin_num = len(joint_fields[nbLensFields:]) #As only cosmic shear is supported, the number of bins is the number of source fields
+
+    #Read in sampled shear bias parameters and calibrated m-bias
 
     if config['shear_bias']:
         biases = block[config['shear_bias_section_name'], 'biases']
@@ -181,7 +184,7 @@ def execute(block, config):
             m_corrected = np.zeros(bin_num)
 
 
-    #Shear
+    # Read in and combine shear maps from different fields for each tomographic bin
     tomo = 0
     alm, alm_rand = [], []
     for group in joint_fields:
@@ -208,13 +211,15 @@ def execute(block, config):
                     os.remove(file)
                 lens = True
                 pass
-
+        
         if lens == False:
             print('  Joining the following sample types which are all within tomographic bin {1}: {0}'.format(group, tomo+1))
 
             pos1_all = np.concatenate(pos1_group, axis =  None)
             pos2_all = np.concatenate(pos2_group, axis =  None)
             e_all = np.concatenate(e_group, axis =  None)
+
+            #Apply random shear bias to each tomographic bin
 
             if config['shear_bias']:
                 print("   Including shear bias...")
@@ -230,6 +235,8 @@ def execute(block, config):
                 else:
                     e_all = ((1+m[tomo])*e_all.real + c1[tomo]) + 1j * ((1+m[tomo])*e_all.imag + c2[tomo])
             
+            #Correct for multiplicative shear bias and/or additive shear bias
+
             if 'add' in config['corrected_biases']:
                 e_all = (e_all.real - np.mean(e_all.real)) + 1j * (e_all.imag - np.mean(e_all.imag))
             
@@ -239,28 +246,32 @@ def execute(block, config):
             shear = np.zeros(hp.nside2npix(nside), dtype=complex)
             counts = np.zeros_like(shear, dtype=int)
 
-            if config['doVariableDepth_in']:
-                pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
-                weight_maps = []
-                for nb in range(int(ndepth)):
-                    weight_maps.append(hp.read_map(weight_map_names[nb]))
-                print('     Weighting shear values according to mask weights...')
-                weight_maps = np.sum(weight_maps, axis = 0)
-                map_shears(shear, counts, pos1_all,  pos2_all, e_all*weight_maps[pix], gal_wht=None)
-                counts = counts*weight_maps
-            else:
-                map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
+            map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
 
+            #Normalise the shear map by the number of galaxies in each pixel
             shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
+            
+            weight_maps = []
+            for nb in range(len(weight_map_names)):
+                weight_maps.append(hp.read_map(weight_map_names[nb]))
+            print('     Weighting shear values according to mask weights...')
+            weight_maps = np.sum(weight_maps, axis = 0)
+            
+            shear *= weight_maps
+            
+            if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
+                counts *= weight_maps
 
             if 'map' in config['out_mode']:
                 filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
                 print('    Saving consolidated count and shear fields for tomographic bin {0} as {1}...'.format(tomo+1, filename))
                 save_fits(filename, [counts, shear.real, shear.imag])
 
+            #Compress the shear map into pseudo-Cls
             if 'pcl' in config['out_mode']:
                 del counts
 
+                #Randomly rotate the shear field to isolate the shape noise
                 gal_num = len(pos1_all)
                 rand_theta = 2*np.pi*np.random.random_sample(gal_num)
                 
@@ -271,13 +282,7 @@ def execute(block, config):
                 rand = np.zeros(hp.nside2npix(nside), dtype=complex)
                 _ = np.zeros_like(rand, dtype=int)
 
-                if config['doVariableDepth_in']:
-                    map_shears(rand, _, pos1_all, pos2_all,  (e1_corr + 1j * e2_corr)*weight_maps[pix], gal_wht=None)
-                    _ = _*weight_maps
-                    del weight_maps
-                    del pix
-                else:                             
-                    map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
+                map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
                 del e1_corr
                 del e2_corr
                 del pos1_all
@@ -287,8 +292,13 @@ def execute(block, config):
 
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 print('  -----')
-                alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax']))
-                alm_rand.append(hp.sphtfunc.map2alm_spin([rand.real, rand.imag], spin = 2, lmax = config['lmax']))
+                
+                rand *= weight_maps
+                
+                del weight_maps
+                
+                alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the shear field
+                alm_rand.append(hp.sphtfunc.map2alm_spin([rand.real, rand.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the random shear field
                 del shear
                 del rand
 
@@ -331,14 +341,14 @@ def execute(block, config):
         for i in range(tomo):
             for j in range(i+1):
                 print('     Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
-                pcls = hp.alm2cl(alm[i], alm[j], lmax = int(config['lmax']))
+                pcls = hp.alm2cl(alm[i], alm[j], lmax = int(config['lmax'])) #Compute the pseudo-Cls
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[0]
                 block[config['out_name'] + '_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[1]
                 block[config['out_name'] + '_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[2]
                 del pcls
 
                 if i == j:
-                    pcls_rand = hp.alm2cl(alm_rand[i], alm_rand[j], lmax = int(config['lmax']))
+                    pcls_rand = hp.alm2cl(alm_rand[i], alm_rand[j], lmax = int(config['lmax'])) #Compute the pseudo-Cls due to shape noise bias
                     block[config['out_name'] + '_noise', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[0]
                     block[config['out_name'] + '_noise_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[1]
                     block[config['out_name'] + '_noise_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[2]
