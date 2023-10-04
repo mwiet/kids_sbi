@@ -251,9 +251,8 @@ def execute(block, config):
             #Normalise the shear map by the number of galaxies in each pixel
             shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
             
-            pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
             weight_maps = []
-            for nb in range(int(ndepth)):
+            for nb in range(len(weight_map_names)):
                 weight_maps.append(hp.read_map(weight_map_names[nb]))
             print('     Weighting shear values according to mask weights...')
             weight_maps = np.sum(weight_maps, axis = 0)
