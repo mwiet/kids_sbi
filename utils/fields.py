@@ -246,18 +246,7 @@ def execute(block, config):
             shear = np.zeros(hp.nside2npix(nside), dtype=complex)
             counts = np.zeros_like(shear, dtype=int)
 
-            #Calculate the shear map for each tomographic bin
-            if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
-                pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
-                weight_maps = []
-                for nb in range(int(ndepth)):
-                    weight_maps.append(hp.read_map(weight_map_names[nb]))
-                print('     Weighting shear values according to mask weights...')
-                weight_maps = np.sum(weight_maps, axis = 0)
-                map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
-                counts = counts*weight_maps
-            else:
-                map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
+            map_shears(shear, counts, pos1_all,  pos2_all, e_all, gal_wht=None)
 
             #Normalise the shear map by the number of galaxies in each pixel
             shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
@@ -282,13 +271,7 @@ def execute(block, config):
                 rand = np.zeros(hp.nside2npix(nside), dtype=complex)
                 _ = np.zeros_like(rand, dtype=int)
 
-                if config['doVariableDepth_in']:
-                    map_shears(rand, _, pos1_all, pos2_all,  (e1_corr + 1j * e2_corr), gal_wht=None)
-                    _ = _*weight_maps
-                    del weight_maps
-                    del pix
-                else:                             
-                    map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
+                map_shears(rand, _, pos1_all, pos2_all,  e1_corr + 1j * e2_corr, gal_wht=None)
                 del e1_corr
                 del e2_corr
                 del pos1_all
@@ -298,6 +281,17 @@ def execute(block, config):
 
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 print('  -----')
+                
+                if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
+                    pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
+                    weight_maps = []
+                    for nb in range(int(ndepth)):
+                        weight_maps.append(hp.read_map(weight_map_names[nb]))
+                    print('     Weighting shear values according to mask weights...')
+                    weight_maps = np.sum(weight_maps, axis = 0)
+                    shear *= weight_maps
+                    rand *= weight_maps
+                
                 alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the shear field
                 alm_rand.append(hp.sphtfunc.map2alm_spin([rand.real, rand.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the random shear field
                 del shear
