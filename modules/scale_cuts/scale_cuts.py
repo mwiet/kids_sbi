@@ -199,16 +199,19 @@ def execute(block, config):
 
     if config["simulate"]:
         mu = block[output_section_name, 'theory']
+        block[output_section_name, 'noiseless_theory'] = mu #writes the noiseless value to block
         cov = block[output_section_name, 'covariance']
         if config["simulate_with_noise"]:
             if(config["number_of_simulations"]>1):
                 for n in range(config["number_of_simulations"]):
                     s = np.random.multivariate_normal(mu, cov)
+                    block[output_section_name, 'theory'] = s
                     config["TP_data"].replaceMeanVector(s)
                     if config["mock_filename"] != "":
                         config["TP_data"].to_fits(config["mock_filename"]+str(n+1)+".fits", overwrite=True)
             else:
                 s = np.random.multivariate_normal(mu, cov)
+                block[output_section_name, 'theory'] = s
                 config["TP_data"].replaceMeanVector(s)
                 if config["mock_filename"] != "":
                     config["TP_data"].to_fits(config["mock_filename"]+".fits", overwrite=True)
