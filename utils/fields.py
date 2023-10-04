@@ -110,8 +110,7 @@ def setup(options):
 
     config['doVariableDepth_in'] = options.get_bool(option_section, 'doVariableDepth')
 
-    if config['doVariableDepth_in'] == True:
-        config['weight_maps'] = options.get_string(option_section, 'weight_maps')
+    config['weight_maps'] = options.get_string(option_section, 'weight_maps')
 
     config['clean']       = options[option_section,  "clean"]
 
@@ -132,6 +131,8 @@ def execute(block, config):
 
     nz = np.array(str(block[config['in_name'], 'nOfZPath']).split(' '), dtype = str)
     
+    weight_map_names = np.array(config['weight_maps'].split(' '), dtype = str)
+    
     #Map fields which are based on the same n(z)
     mapping = {}
     _, index = np.unique(nz, return_index=True)
@@ -143,7 +144,6 @@ def execute(block, config):
     if str(vd) == '1': #If vd, then the shear maps are split into depth bins
         ndepth = block[config['in_name'], 'nbDepthMaps']
         ntomo = block[config['in_name'], 'nbTomo']
-        weight_map_names = np.array(config['weight_maps'].split(' '), dtype = str)
         for i in range(int(ntomo)):
             joint_fields.append(np.array([nbLensFields + nbSourceFields + n + int(ndepth)*i for n in range(int(ndepth))]))
 
@@ -250,6 +250,18 @@ def execute(block, config):
 
             #Normalise the shear map by the number of galaxies in each pixel
             shear[counts > 0] = np.divide(shear[counts > 0], counts[counts > 0])
+            
+            pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
+            weight_maps = []
+            for nb in range(int(ndepth)):
+                weight_maps.append(hp.read_map(weight_map_names[nb]))
+            print('     Weighting shear values according to mask weights...')
+            weight_maps = np.sum(weight_maps, axis = 0)
+            
+            shear *= weight_maps
+            
+            if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
+                counts *= weight_maps
 
             if 'map' in config['out_mode']:
                 filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
@@ -282,15 +294,9 @@ def execute(block, config):
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 print('  -----')
                 
-                if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
-                    pix = hp.ang2pix(nside, pos1_all, pos2_all, lonlat=True)
-                    weight_maps = []
-                    for nb in range(int(ndepth)):
-                        weight_maps.append(hp.read_map(weight_map_names[nb]))
-                    print('     Weighting shear values according to mask weights...')
-                    weight_maps = np.sum(weight_maps, axis = 0)
-                    shear *= weight_maps
-                    rand *= weight_maps
+                rand *= weight_maps
+                
+                del weight_maps
                 
                 alm.append(hp.sphtfunc.map2alm_spin([shear.real, shear.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the shear field
                 alm_rand.append(hp.sphtfunc.map2alm_spin([rand.real, rand.imag], spin = 2, lmax = config['lmax'])) #Compute the alms for the random shear field
