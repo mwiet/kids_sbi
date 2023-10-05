@@ -257,10 +257,10 @@ def execute(block, config):
             print('     Weighting shear values according to mask weights...')
             weight_maps = np.sum(weight_maps, axis = 0)
             
-            shear *= weight_maps
+            shear = np.multiply(shear, weight_maps)
             
             if config['doVariableDepth_in']: #Correct for the absence of a fractional mask in SALMO in the variable depth case
-                counts *= weight_maps
+                counts = np.multiply(counts, weight_maps)
 
             if 'map' in config['out_mode']:
                 filename = '{0}_{1}_sample{2}_tomo{3}_counts+shear.fits'.format(block[config['in_name'], 'outPrefix'], block[config['in_name'], 'runTag'], block[config['in_name'], 'counter'], tomo)
@@ -293,7 +293,7 @@ def execute(block, config):
                 print('  Computing alms for tomographic bin {0}...'.format(tomo+1))
                 print('  -----')
                 
-                rand *= weight_maps
+                rand = np.multiply(rand, weight_maps)
                 
                 del weight_maps
                 
