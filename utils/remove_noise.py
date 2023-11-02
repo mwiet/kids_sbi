@@ -26,7 +26,7 @@ def execute(block, config):
                     noise = block[config['in_name'] + '_noise', 'bin_{0}_{1}'.format(i+1, j+1)]
                     shear_cl -= np.average(noise[config['min_ell_noise']:], weights = (2*ell[config['min_ell_noise']:]) + 1) #Subtracting the weighted average of the shape noise bias
                 
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = 2*shear_cl
                 counter += 1
                 
         block[config['out_name'], "is_auto"] = 'True'
