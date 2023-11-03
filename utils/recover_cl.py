@@ -42,6 +42,14 @@ def execute(block, config):
         block[config['out_name'], "nbin_a"] = nbin
         block[config['out_name'], "nbin_b"] = nbin
         block[config['out_name'], "ell"] = np.arange(l_min,l_max+1)
+
+        block[config['out_name'] + '_bb', "is_auto"] = 'True'
+        block[config['out_name'] + '_bb', "sample_a"] = 'source'
+        block[config['out_name'] + '_bb', "sample_b"] = 'source'
+        block[config['out_name'] + '_bb', "nbin"] = nbin
+        block[config['out_name'] + '_bb', "nbin_a"] = nbin
+        block[config['out_name'] + '_bb', "nbin_b"] = nbin
+        block[config['out_name'] + '_bb', "ell"] = np.arange(l_min,l_max+1)
         
         _, pixel_window = hp.pixwin(config['nside'], lmax=l_max, pol=True)
 
