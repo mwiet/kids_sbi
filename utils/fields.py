@@ -201,7 +201,7 @@ def execute(block, config):
 
                 pos1_group.append(data.field(0))
                 pos2_group.append(data.field(1))
-                e_group.append(data.field(5) + 1j * data.field(6))
+                e_group.append(data.field(5) - 1j * data.field(6))
                 del data
 
                 lens = False
@@ -323,6 +323,24 @@ def execute(block, config):
         block[config['out_name'], "nbin_b"] = tomo
         block[config['out_name'], "ell"] = np.arange(0, config['lmax']+1)
         block[config['out_name'], 'nOfZPath'] = block[config['in_name'], 'nOfZPath']
+
+        block[config['out_name'] + '_bb', "is_auto"] = 'True'
+        block[config['out_name'] + '_bb', "sample_a"] = 'source'
+        block[config['out_name'] + '_bb', "sample_b"] = 'source'
+        block[config['out_name'] + '_bb', "nbin"] = tomo
+        block[config['out_name'] + '_bb', "nbin_a"] = tomo
+        block[config['out_name'] + '_bb', "nbin_b"] = tomo
+        block[config['out_name'] + '_bb', "ell"] = np.arange(0, config['lmax']+1)
+        block[config['out_name'] + '_bb', 'nOfZPath'] = block[config['in_name'], 'nOfZPath']
+
+        block[config['out_name'] + '_eb', "is_auto"] = 'True'
+        block[config['out_name'] + '_eb', "sample_a"] = 'source'
+        block[config['out_name'] + '_eb', "sample_b"] = 'source'
+        block[config['out_name'] + '_eb', "nbin"] = tomo
+        block[config['out_name'] + '_eb', "nbin_a"] = tomo
+        block[config['out_name'] + '_eb', "nbin_b"] = tomo
+        block[config['out_name'] + '_eb', "ell"] = np.arange(0, config['lmax']+1)
+        block[config['out_name'] + '_eb', 'nOfZPath'] = block[config['in_name'], 'nOfZPath']
         if nbSourceFields > 0:
             block[config['out_name'], 'n_density'] = block[config['in_name'], 'n_gal'][nbLensFields:]
             block[config['out_name'], 'sigma_e'] = block[config['in_name'], 'sigma_eps'][nbLensFields:]
@@ -343,15 +361,15 @@ def execute(block, config):
                 print('     Getting shear Cls for bin {0} and bin {1}...'.format(i+1, j+1))
                 pcls = hp.alm2cl(alm[i], alm[j], lmax = int(config['lmax'])) #Compute the pseudo-Cls
                 block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[0]
-                block[config['out_name'] + '_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[1]
-                block[config['out_name'] + '_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[2]
+                block[config['out_name'] + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[1]
+                block[config['out_name'] + '_eb', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls[2]
                 del pcls
 
                 if i == j:
                     pcls_rand = hp.alm2cl(alm_rand[i], alm_rand[j], lmax = int(config['lmax'])) #Compute the pseudo-Cls due to shape noise bias
                     block[config['out_name'] + '_noise', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[0]
-                    block[config['out_name'] + '_noise_BB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[1]
-                    block[config['out_name'] + '_noise_EB', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[2]
+                    block[config['out_name'] + '_noise_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[1]
+                    block[config['out_name'] + '_noise_eb', 'bin_{0}_{1}'.format(i+1,j+1)] = pcls_rand[2]
                     del pcls_rand
 
         toc = time.time()

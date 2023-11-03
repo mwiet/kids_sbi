@@ -16,17 +16,22 @@ def execute(block, config):
         nbin = block[config['in_name'], 'nbin']
         
         ell =  block[config['in_name'], 'ell']
+        ell_bb =  block[config['in_name'] + '_bb', 'ell']
         print("Subtracting shot and shape noise...")
         counter = 0
         for i in range(nbin):
             for j in range(i+1):
                 shear_cl = block[config['in_name'], 'bin_{0}_{1}'.format(i+1, j+1)]
+                shear_cl_bb = block[config['in_name']+'_bb', 'bin_{0}_{1}'.format(i+1, j+1)]
 
                 if i == j:
                     noise = block[config['in_name'] + '_noise', 'bin_{0}_{1}'.format(i+1, j+1)]
+                    noise_bb = block[config['in_name'] + '_noise_bb', 'bin_{0}_{1}'.format(i+1, j+1)]
                     shear_cl -= np.average(noise[config['min_ell_noise']:], weights = (2*ell[config['min_ell_noise']:]) + 1) #Subtracting the weighted average of the shape noise bias
-                
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = 2*shear_cl
+                    shear_cl_bb -= np.average(noise_bb[config['min_ell_noise']:], weights = (2*ell_bb[config['min_ell_noise']:]) + 1)
+
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl
+                block[config['out_name'] + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = shear_cl_bb
                 counter += 1
                 
         block[config['out_name'], "is_auto"] = 'True'
@@ -36,6 +41,14 @@ def execute(block, config):
         block[config['out_name'], "nbin_a"] = nbin
         block[config['out_name'], "nbin_b"] = nbin
         block[config['out_name'], "ell"] = ell
+
+        block[config['out_name'] + '_bb', "is_auto"] = 'True'
+        block[config['out_name'] + '_bb', "sample_a"] = 'source'
+        block[config['out_name'] + '_bb', "sample_b"] = 'source'
+        block[config['out_name'] + '_bb', "nbin"] = nbin
+        block[config['out_name'] + '_bb', "nbin_a"] = nbin
+        block[config['out_name'] + '_bb', "nbin_b"] = nbin
+        block[config['out_name'] + '_bb', "ell"] = ell_bb
     else:
         raise Exception('Unsupported output.')
     
