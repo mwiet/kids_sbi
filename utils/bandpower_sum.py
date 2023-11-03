@@ -50,6 +50,7 @@ def execute(block, config):
     # Loop through bin pairs and see if C_ell exists for all of them
     n_bins = int(block[input_section, 'nbin'])
     theory_bandpowers_stacked, bandpower_ell = np.array([]), np.array([])
+    theory_bandpowers_stacked_bb, bandpower_ell_bb = np.array([]), np.array([])
 
     for i in range(n_bins):
         for j in range(i+1):
