@@ -30,7 +30,10 @@ def execute(block, config):
         l_max = config['l_max']
 
         print('Reading in shear mixing matrix from the mask: {0}'.format(config['mm_mask']))
-        mm = np.load(config['mm_mask'])['arr_0'][l_min:l_max+1, l_min:l_max+1]
+        mm = np.load(config['mm_mask'])['arr_0']
+        ell_range = int(np.shape(mm)[0]/3)
+        mm_ee_ee = mm[l_min:l_max+1, l_min:l_max+1]
+        mm_ee_bb = mm[0:ell_range+1, ell_range:2*ell_range+1][l_min:l_max+1, l_min:l_max+1]
            
         block[config['out_name'], "is_auto"] = 'True'
         block[config['out_name'], "sample_a"] = 'source'
@@ -49,8 +52,12 @@ def execute(block, config):
                 cl_interp = interp1d(ell, shear_cl, fill_value = "extrapolate") #Will only extrapolate to the nearest integer ell
                 cl = cl_interp(np.arange(l_min, l_max+1))
                 print('     Reading in shear mixing matrix to account for sampling: {0}'.format(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1)))
-                mm_sampling = np.load(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1))['arr_0'][l_min:l_max+1, l_min:l_max+1]
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm.dot(mm_sampling.dot(cl))
+                mm_sampling = np.load(config['mm_sampling_prefix'] + '_{0}_{1}.npz'.format(i+1, j+1))['arr_0']
+                ell_range = int(np.shape(mm_sampling)[0]/3)
+                mms_ee_ee = mm_sampling[l_min:l_max+1, l_min:l_max+1]
+                mms_ee_bb = mm_sampling[0:ell_range+1, ell_range:2*ell_range+1][l_min:l_max+1, l_min:l_max+1]
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm_ee_ee.dot(mms_ee_ee.dot(cl))
+                block[config['out_name'] + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm_ee_bb.dot(mms_ee_bb.dot(cl))
                 del mm_sampling
                 counter += 1
         
