@@ -38,8 +38,7 @@ def execute(block, config):
     ell = block[input_section, "ell"]
     ell_new = ell[(l_max > ell) & (ell >= l_min)]
 
-    ell_bb = block[input_section + '_bb', "ell"]
-    ell_bb_new = ell_bb[(l_max > ell_bb) & (ell_bb >= l_min)]
+    ell_bb_new = ell_new
 
     if np.all((ell_new[1:] - ell_new[:-1]) == 1.0):
         print('Given Cls are calculated at interger values of ell already.')
@@ -57,7 +56,7 @@ def execute(block, config):
             theory_cl = block[input_section, 'bin_{0}_{1}'.format(i+1,j+1)]
             theory_cl_bb = block[input_section + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)]
             theory_cl = theory_cl[(l_max > ell) & (ell >= l_min)]
-            theory_cl_bb = theory_cl_bb[(l_max > ell_bb) & (ell_bb >= l_min)]
+            theory_cl_bb = theory_cl_bb[(l_max > ell) & (ell >= l_min)]
             band_average, centre_ell, band_cutoffs = average_bands(ell_new, theory_cl, num_bands)
             band_average_bb, centre_ell_bb, band_cutoffs_bb = average_bands(ell_bb_new, theory_cl_bb, num_bands)
             theory_bandpowers_stacked = np.append(theory_bandpowers_stacked, band_average)
