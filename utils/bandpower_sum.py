@@ -78,7 +78,7 @@ def execute(block, config):
     block[config['out_name'] + '_bb', "edge_ell"] = band_cutoffs_bb
     
     block[config['out_name'], "bandpowers"] = np.concatenate([theory_bandpowers_stacked, theory_bandpowers_stacked_bb])
-    block[config['out_name'], "bandpower_ell"] = np.conatenate([bandpower_ell, bandpower_ell_bb])
+    block[config['out_name'], "bandpower_ell"] = np.concatenate([bandpower_ell, bandpower_ell_bb])
     block[config['out_name'], "centre_ell"] = centre_ell
     block[config['out_name'], "edge_ell"] = band_cutoffs
 
