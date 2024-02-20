@@ -6,12 +6,6 @@ This repository supports running a simulation-based/likelihood-free analysis bas
 - Forward simulations: von Wietersheim-Kramsta et al. in prep.
 - Likelihood-free inference: [Lin et al. 2022](https://arxiv.org/abs/2212.04521)
 
-This repository contains the cosmology inference pipeline that was used in the KiDS-1000 analyses:
- - Methodology: [Joachimi, Lin, Asgari, Tröster, Heymans et al. 2021](https://arxiv.org/abs/2007.01844)
- - Cosmic shear: [Asgari, Lin, Joachimi et al. 2021](https://arxiv.org/abs/2007.15633)
- - 3x2pt: [Heymans, Tröster et al. 2021](https://arxiv.org/abs/2007.15632)
- - Beyond flat ΛCDM: [Tröster et al. 2021](https://arxiv.org/abs/2010.16416)
-
 The repository is based on the master branch of KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
 
 The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket.org/tilmantroester/cosmosis/src/kcap/) that is `pip`-installable and doesn't rely on environmental variables.
