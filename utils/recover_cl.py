@@ -34,6 +34,7 @@ def execute(block, config):
         ell_range = int(np.shape(mm)[0]/3)
         mm_ee_ee = mm[l_min:l_max+1, l_min:l_max+1]
         mm_ee_bb = mm[0:ell_range+1, ell_range:2*ell_range+1][l_min:l_max+1, l_min:l_max+1]
+        mm_bb_bb = mm[ell_range:2*ell_range+1, ell_range:2*ell_range+1][l_min:l_max+1, l_min:l_max+1]
            
         block[config['out_name'], "is_auto"] = 'True'
         block[config['out_name'], "sample_a"] = 'source'
@@ -64,8 +65,8 @@ def execute(block, config):
                 ell_range = int(np.shape(mm_sampling)[0]/3)
                 mms_ee_ee = mm_sampling[l_min:l_max+1, l_min:l_max+1]
                 mms_ee_bb = mm_sampling[0:ell_range+1, ell_range:2*ell_range+1][l_min:l_max+1, l_min:l_max+1]
-                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm_ee_ee.dot(mms_ee_ee.dot(cl))
-                block[config['out_name'] + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * mm_ee_bb.dot(mms_ee_bb.dot(cl))
+                block[config['out_name'], 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * (mm_ee_ee.dot(mms_ee_ee.dot(cl)) + mm_ee_bb.dot(mms_ee_bb.dot(cl)))
+                block[config['out_name'] + '_bb', 'bin_{0}_{1}'.format(i+1,j+1)] = pixel_window[l_min:l_max+1]**2 * (mm_bb_bb.dot(mms_ee_bb.dot(cl)) + mm_ee_bb.dot(mms_ee_ee.dot(cl))) 
                 del mm_sampling
                 counter += 1
         
