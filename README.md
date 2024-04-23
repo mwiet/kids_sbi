@@ -1,16 +1,13 @@
 <img src="KiDS_SBI_logo.png" width="400" />
 
 # Kilo-Degree Survey - Simulation-Based Inference
+[![arXiv](https://img.shields.io/badge/arXiv-2212.04521-red)](https://arxiv.org/abs/2212.04521)
+[![adsabs](https://img.shields.io/badge/ads-2023MNRAS.524.6167L-blueviolet)](https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6167L/abstract)
+[![doi](https://img.shields.io/badge/doi-10.1093%2Fmnras%2Fstad2262-blue)](https://doi.org/10.1093/mnras/stad2262)
 
 This repository supports running a simulation-based/likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the CosmoSIS and GLASS frameworks that was used in the following analyses:
 - Forward simulations: von Wietersheim-Kramsta et al. in prep.
-- Likelihood-free inference: [Lin et al. 2022](https://arxiv.org/abs/2212.04521)
-
-This repository contains the cosmology inference pipeline that was used in the KiDS-1000 analyses:
- - Methodology: [Joachimi, Lin, Asgari, Tröster, Heymans et al. 2021](https://arxiv.org/abs/2007.01844)
- - Cosmic shear: [Asgari, Lin, Joachimi et al. 2021](https://arxiv.org/abs/2007.15633)
- - 3x2pt: [Heymans, Tröster et al. 2021](https://arxiv.org/abs/2007.15632)
- - Beyond flat ΛCDM: [Tröster et al. 2021](https://arxiv.org/abs/2010.16416)
+- Likelihood-free inference: [Lin et al. 2023](https://arxiv.org/abs/2212.04521)
 
 The repository is based on the master branch of KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
 
@@ -18,7 +15,7 @@ The pipeline is built on CosmoSIS, albeit a [modified version](https://bitbucket
 
 The KiDS-SBI repository integrates the Generator for Large Scale Structure environment ([Tessore et al. 2023](https://arxiv.org/abs/2302.01942)), which can be found [here](https://github.com/glass-dev/glass), into CosmoSIS.
 
-In addition, the KiDS-SBI implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module (Reischke et al. in prep.). This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
+In addition, the KiDS-SBI implements a new methodology to project 3D power spectra to 2D angular power spectra within the nonLimber module. This is achieved using the Levin method [Levin 1994](https://www.sciencedirect.com/science/article/pii/0377042794001189) and the code is available [here](https://github.com/rreischke/nonLimber_max).
 
 ## Installation
 
