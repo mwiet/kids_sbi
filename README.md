@@ -2,7 +2,7 @@
 
 # Kilo-Degree Survey - Simulation-Based Inference
 [![arXiv](https://img.shields.io/badge/arXiv-2404.15402-red)](https://arxiv.org/abs/2404.15402)
-[![adsabs](https://img.shields.io/badge/2024arXiv240415402V-blueviolet)](https://ui.adsabs.harvard.edu/abs/2024arXiv240415402V/abstract)
+[![adsabs](https://img.shields.io/badge/ads-2024arXiv240415402V-blueviolet)](https://ui.adsabs.harvard.edu/abs/2024arXiv240415402V/abstract)
 [![arXiv](https://img.shields.io/badge/arXiv-2212.04521-red)](https://arxiv.org/abs/2212.04521)
 [![adsabs](https://img.shields.io/badge/ads-2023MNRAS.524.6167L-blueviolet)](https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6167L/abstract)
 [![doi](https://img.shields.io/badge/doi-10.1093%2Fmnras%2Fstad2262-blue)](https://doi.org/10.1093/mnras/stad2262)
