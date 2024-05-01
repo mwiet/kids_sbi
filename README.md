@@ -1,13 +1,15 @@
 <img src="KiDS_SBI_logo.png" width="400" />
 
 # Kilo-Degree Survey - Simulation-Based Inference
+[![arXiv](https://img.shields.io/badge/arXiv-2404.15402-red)](https://arxiv.org/abs/2404.15402)
+[![adsabs](https://img.shields.io/badge/2024arXiv240415402V-blueviolet)](https://ui.adsabs.harvard.edu/abs/2024arXiv240415402V/abstract)
 [![arXiv](https://img.shields.io/badge/arXiv-2212.04521-red)](https://arxiv.org/abs/2212.04521)
 [![adsabs](https://img.shields.io/badge/ads-2023MNRAS.524.6167L-blueviolet)](https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.6167L/abstract)
 [![doi](https://img.shields.io/badge/doi-10.1093%2Fmnras%2Fstad2262-blue)](https://doi.org/10.1093/mnras/stad2262)
 
 This repository supports running a simulation-based/likelihood-free analysis based on forward-simulatios of KiDS-1000 cosmic shear within the CosmoSIS and GLASS frameworks that was used in the following analyses:
-- Forward simulations: von Wietersheim-Kramsta et al. in prep.
-- Likelihood-free inference: [Lin et al. 2023](https://arxiv.org/abs/2212.04521)
+- Forward simulations and inference analysis: [von Wietersheim-Kramsta et al. 2024](https://arxiv.org/abs/2404.15402)
+- Simulation-based inference pipeline: [Lin et al. 2023](https://arxiv.org/abs/2212.04521)
 
 The repository is based on the master branch of KCAP module which can be found [here](https://github.com/KiDS-WL/kcap).
 
